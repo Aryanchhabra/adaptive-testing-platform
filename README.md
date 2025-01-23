@@ -1,4 +1,4 @@
-# HackMIT Project Template
+# Adaptive Test AI
 
 A modern full-stack web application template using React, Flask, and PostgreSQL. This template provides a solid foundation for building scalable web applications with a robust frontend, backend, and database setup.
 
@@ -48,10 +48,6 @@ pip3 install -r requirements.txt
 flask run
 ```
 
-## 🏃‍♂️ Development
-
-- Frontend runs on: `http://localhost:5173`
-- Backend runs on: `http://localhost:5000`
 
 ## 📝 Project Structure
 ```
@@ -76,7 +72,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Your Name** - [GitHub Profile](https://github.com/aryanchhabra)
+- Prathmesh Nikam
+- Aniket Hupele
+- Yash Kolhe
+- Aryan Chhabra - [GitHub Profile](https://github.com/aryanchhabra)
 
 ## 🙏 Acknowledgments
 
