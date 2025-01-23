@@ -1,0 +1,22 @@
+:root {
+  --primary: #2dd4bf;
+  --background: #0f172a;
+  --card-bg: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+.gradient-text {
+  background: linear-gradient(45deg, #2dd4bf, #38bdf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+} 
