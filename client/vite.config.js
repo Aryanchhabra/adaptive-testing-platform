@@ -13,5 +13,8 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  resolve: {
+    extensions: ['.js', '.jsx']
   }
 })

@@ -8,8 +8,6 @@ import Home from './components/Home';
 import About from './components/About';
 import Contact from './components/Contact';
 import { AuthProvider } from './contexts/AuthContext';
-import AdminLogin from './components/Auth/AdminLogin';
-import Signup from './components/Auth/Signup';
 
 function App() {
   return (
@@ -22,8 +20,6 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/signup" element={<Signup />} />
             </Routes>
           </Layout>
         </Router>
