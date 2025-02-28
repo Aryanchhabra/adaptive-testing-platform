@@ -8,6 +8,7 @@ import Home from './components/Home';
 import About from './components/About';
 import Contact from './components/Contact';
 import { AuthProvider } from './contexts/AuthContext';
+import AdaptiveTest from './components/Test/AdaptiveTest';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/test" element={<AdaptiveTest />} />
             </Routes>
           </Layout>
         </Router>

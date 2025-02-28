@@ -13,8 +13,45 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(45deg, #2dd4bf, #38bdf8);
+  background: linear-gradient(45deg, #0A66C2, #0b7ad4);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Add smooth transitions */
+.MuiButton-root,
+.MuiPaper-root,
+.MuiTypography-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0A66C2;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #084b8e;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 } 

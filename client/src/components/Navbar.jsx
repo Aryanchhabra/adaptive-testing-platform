@@ -3,9 +3,17 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { LoginButton } from './Auth/LoginButton';
 import { useAuthContext } from '../contexts/AuthContext';
+import { useTheme } from '@mui/material/styles';
 
 function Navbar() {
   const { user } = useAuthContext();
+  const theme = useTheme();
+
+  const navItems = [
+    { text: 'Home', path: '/' },
+    { text: 'About', path: '/about' },
+    { text: 'Contact', path: '/contact' }
+  ];
 
   return (
     <AppBar position="static">
@@ -30,7 +38,8 @@ function Navbar() {
               color: 'inherit',
               fontWeight: 700,
               '& span': {
-                background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
+                background: (theme) => 
+                  `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 color: 'transparent',
@@ -40,17 +49,16 @@ function Navbar() {
             <span>AdaptiveTestAI</span>
           </Typography>
         </Box>
+        
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Button color="inherit" component={Link} to="/">
-            Home
-          </Button>
-          <Button color="inherit" component={Link} to="/about">
-            About
-          </Button>
-          <Button color="inherit" component={Link} to="/contact">
-            Contact
-          </Button>
+          {navItems.map((item, index) => (
+            <Button key={index} color="inherit" component={Link} to={item.path}>
+              {item.text}
+            </Button>
+          ))}
+
           <LoginButton />
+          
           {!user && (
             <Button
               variant="contained"
@@ -58,10 +66,9 @@ function Navbar() {
               component={Link}
               to="/signup"
               sx={{
-                background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
+                background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-                  opacity: 0.9,
+                  background: 'linear-gradient(45deg, #084b8e, #0A66C2)',
                 }
               }}
             >

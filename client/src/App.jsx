@@ -7,9 +7,13 @@ import Layout from './components/Layout';
 import Home from './components/Home';
 import About from './components/About';
 import Contact from './components/Contact';
+import AdaptiveQuiz from './components/Quiz/AdaptiveQuiz';
 import { AuthProvider } from './contexts/AuthContext';
 import AdminLogin from './components/Auth/AdminLogin';
 import Signup from './components/Auth/Signup';
+import DemoFeatures from './components/Demo/DemoFeatures';
+import TestConnection from './components/Test/TestConnection';
+import QuestionGenerator from './components/Admin/QuestionGenerator';
 
 function App() {
   return (
@@ -22,8 +26,12 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/quiz" element={<AdaptiveQuiz />} />
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/demo" element={<DemoFeatures />} />
+              <Route path="/test-connection" element={<TestConnection />} />
+              <Route path="/admin/question-generator" element={<QuestionGenerator />} />
             </Routes>
           </Layout>
         </Router>

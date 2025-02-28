@@ -1,158 +1,223 @@
 import React from 'react';
-import { Typography, Box, Container, Paper, Button, Grid } from '@mui/material';
-import { Assessment, Psychology, Timeline, AutoGraph } from '@mui/icons-material';
+import { 
+  Container, Box, Typography, Button, Grid,
+  Card, useTheme, Divider 
+} from '@mui/material';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from '../contexts/AuthContext';
+import { 
+  CodeRounded as CodeIcon,
+  AutoFixHigh as AdaptiveIcon,
+  Analytics as AnalyticsIcon,
+  Psychology as LearningIcon
+} from '@mui/icons-material';
 
-function FeatureCard({ icon, title, description }) {
-  return (
-    <Paper 
-      elevation={0} 
-      sx={{ 
-        p: 3, 
+const FeatureHighlight = ({ icon, title, description, delay }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6, delay }}
+  >
+    <Card
+      elevation={0}
+      sx={{
+        p: 3,
         height: '100%',
-        bgcolor: 'background.paper', 
-        borderRadius: 4,
+        background: 'transparent',
         border: '1px solid',
-        borderColor: 'rgba(255,255,255,0.1)',
-        transition: 'transform 0.2s',
+        borderColor: 'divider',
+        borderRadius: 3,
+        transition: 'all 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-5px)',
+          transform: 'translateY(-4px)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          borderColor: 'transparent'
         }
       }}
     >
       <Box sx={{ color: 'primary.main', mb: 2 }}>
         {icon}
       </Box>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" gutterBottom fontWeight="bold">
         {title}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         {description}
       </Typography>
-    </Paper>
-  );
-}
+    </Card>
+  </motion.div>
+);
 
-function Home() {
+const Home = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+
   const features = [
     {
-      icon: <Assessment sx={{ fontSize: 40 }} />,
-      title: "Adaptive Testing",
-      description: "Questions adapt to your skill level in real-time, providing a personalized assessment experience."
+      icon: <AdaptiveIcon sx={{ fontSize: 36 }} />,
+      title: "Adaptive Difficulty",
+      description: "Questions automatically adjust based on your performance, ensuring optimal learning progression"
     },
     {
-      icon: <Psychology sx={{ fontSize: 40 }} />,
-      title: "AI-Powered Learning",
-      description: "Advanced AI algorithms analyze your performance and provide tailored recommendations for improvement."
+      icon: <AnalyticsIcon sx={{ fontSize: 36 }} />,
+      title: "Real-time Progress",
+      description: "Track your mastery across different Python topics with detailed performance analytics"
     },
     {
-      icon: <Timeline sx={{ fontSize: 40 }} />,
-      title: "Progress Tracking",
-      description: "Monitor your learning journey with detailed analytics and progress reports."
-    },
-    {
-      icon: <AutoGraph sx={{ fontSize: 40 }} />,
-      title: "Performance Analytics",
-      description: "Get insights into your strengths and areas for improvement with comprehensive performance analysis."
+      icon: <LearningIcon sx={{ fontSize: 36 }} />,
+      title: "Smart Learning",
+      description: "Receive personalized feedback and explanations tailored to your understanding"
     }
   ];
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mt: 8, textAlign: 'center' }}>
-        <Typography 
-          variant="h2" 
-          component="h1" 
-          gutterBottom 
-          sx={{ 
-            fontWeight: 700,
-            '& span': {
-              background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-            }
-          }}
+      {/* Hero Section */}
+      <Box 
+        sx={{ 
+          minHeight: '70vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          py: { xs: 4, md: 8 }
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          <span>Transform Your Learning Journey</span>
-        </Typography>
-        <Typography variant="h5" color="text.secondary" paragraph sx={{ mb: 6, maxWidth: '800px', mx: 'auto' }}>
-          Experience the future of education with our AI-powered adaptive testing platform
-        </Typography>
-
-        <Box sx={{ mb: 8, display: 'flex', gap: 2, justifyContent: 'center' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            sx={{
-              background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-                opacity: 0.9,
-              }
-            }}
-          >
-            Start Learning
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="large"
-          >
-            Watch Demo
-          </Button>
-        </Box>
-
-        <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <FeatureCard {...feature} />
-            </Grid>
-          ))}
-        </Grid>
-
-        {!user && (
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 6, 
-              mt: 8,
-              bgcolor: 'background.paper', 
-              borderRadius: 4,
-              border: '1px solid',
-              borderColor: 'rgba(255,255,255,0.1)',
-            }}
-          >
-            <Typography variant="h4" gutterBottom>
-              Ready to Get Started?
-            </Typography>
-            <Typography variant="body1" paragraph sx={{ mb: 4 }}>
-              Join thousands of students who are already experiencing the future of learning.
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={() => navigate('/signup')}
-              sx={{
-                background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #2dd4bf, #38bdf8)',
-                  opacity: 0.9,
-                }
+          <Box sx={{ mb: 6 }}>
+            <CodeIcon 
+              sx={{ 
+                fontSize: 60, 
+                color: 'primary.main',
+                mb: 3
+              }} 
+            />
+            <Typography 
+              variant="h2" 
+              component="h1"
+              sx={{ 
+                fontWeight: 700,
+                background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                color: 'transparent',
+                mb: 3,
+                fontSize: { xs: '2.5rem', md: '3.75rem' }
               }}
             >
-              Sign Up Now
+              Master Python with
+              <br />
+              Adaptive Learning
+            </Typography>
+            
+            <Typography 
+              variant="h5" 
+              color="text.secondary"
+              sx={{ 
+                maxWidth: 600, 
+                mx: 'auto',
+                mb: 5,
+                fontSize: { xs: '1.25rem', md: '1.5rem' }
+              }}
+            >
+              Take our 10-question adaptive quiz to assess and improve
+              your Python programming skills
+            </Typography>
+
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate('/quiz')}
+              sx={{
+                py: 2,
+                px: 8,
+                fontSize: '1.2rem',
+                borderRadius: 2,
+                background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                boxShadow: '0 4px 20px rgba(10, 102, 194, 0.25)',
+                textTransform: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #085294, #0A66C2)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 25px rgba(10, 102, 194, 0.3)',
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Start Quiz
             </Button>
-          </Paper>
-        )}
+          </Box>
+        </motion.div>
+      </Box>
+
+      <Divider sx={{ my: 4 }} />
+
+      {/* Features Section */}
+      <Box sx={{ py: 4 }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.2 }}
+        >
+          <Typography 
+            variant="h6" 
+            align="center" 
+            gutterBottom
+            sx={{
+              color: 'text.secondary',
+              fontWeight: 500,
+              mb: 6
+            }}
+          >
+            How it works
+          </Typography>
+          
+          <Grid container spacing={4}>
+            {features.map((feature, index) => (
+              <Grid item xs={12} md={4} key={index}>
+                <FeatureHighlight {...feature} delay={0.3 + index * 0.1} />
+              </Grid>
+            ))}
+          </Grid>
+        </motion.div>
+      </Box>
+
+      {/* Bottom Quote */}
+      <Box 
+        component={motion.div}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+        sx={{ 
+          mt: 8,
+          mb: 4,
+          p: 4,
+          borderRadius: 4,
+          bgcolor: 'rgba(10, 102, 194, 0.04)',
+          maxWidth: 800,
+          mx: 'auto',
+          textAlign: 'center'
+        }}
+      >
+        <Typography 
+          variant="body1" 
+          color="text.secondary"
+          sx={{ 
+            fontStyle: 'italic',
+            fontSize: '1.1rem'
+          }}
+        >
+          "Our intelligent system analyzes your responses in real-time,
+          creating a personalized learning path that evolves with your understanding."
+        </Typography>
       </Box>
     </Container>
   );
-}
+};
 
 export default Home; 

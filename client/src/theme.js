@@ -1,25 +1,30 @@
 import { createTheme } from '@mui/material/styles';
 
+const linkedinColors = {
+  primary: '#0A66C2',    // LinkedIn blue
+  hover: '#084b8e',      // Darker blue for hover
+  light: '#0b7ad4',      // Lighter blue for accents
+  background: '#0f172a', // Dark background
+  paper: '#1e293b',      // Paper background
+  text: '#e2e8f0',      // Primary text
+  textSecondary: '#94a3b8' // Secondary text
+};
+
 export const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#2dd4bf',
-      light: '#4aedc4',
-      dark: '#1f9d8b',
-    },
-    secondary: {
-      main: '#38bdf8',
-      light: '#5ccbff',
-      dark: '#2894c7',
+      main: linkedinColors.primary,
+      light: linkedinColors.light,
+      dark: linkedinColors.hover,
     },
     background: {
-      default: '#0f172a',
-      paper: '#1e293b',
+      default: linkedinColors.background,
+      paper: linkedinColors.paper,
     },
     text: {
-      primary: '#e2e8f0',
-      secondary: '#94a3b8',
+      primary: linkedinColors.text,
+      secondary: linkedinColors.textSecondary,
     }
   },
   typography: {
@@ -37,7 +42,7 @@ export const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1e293b',
+          backgroundColor: linkedinColors.paper,
           boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         },
       },
@@ -48,7 +53,43 @@ export const theme = createTheme({
           textTransform: 'none',
           borderRadius: '8px',
         },
+        contained: {
+          background: `linear-gradient(45deg, ${linkedinColors.primary}, ${linkedinColors.light})`,
+          '&:hover': {
+            background: `linear-gradient(45deg, ${linkedinColors.hover}, ${linkedinColors.primary})`,
+          }
+        },
+        outlined: {
+          borderColor: linkedinColors.primary,
+          color: linkedinColors.primary,
+          '&:hover': {
+            borderColor: linkedinColors.light,
+            backgroundColor: `${linkedinColors.primary}10`,
+          }
+        }
       },
     },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: linkedinColors.paper,
+          backgroundImage: 'none',
+        }
+      }
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          '& .gradient-text': {
+            background: `linear-gradient(45deg, ${linkedinColors.primary}, ${linkedinColors.light})`,
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+          }
+        }
+      }
+    }
   },
-}); 
+});
+
+export { linkedinColors }; 
