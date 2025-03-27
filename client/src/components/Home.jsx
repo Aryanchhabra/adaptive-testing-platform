@@ -4,7 +4,7 @@ import {
   Card, useTheme, Divider 
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   CodeRounded as CodeIcon,
   AutoFixHigh as AdaptiveIcon,
@@ -184,6 +184,16 @@ const Home = () => {
               </Grid>
             ))}
           </Grid>
+
+          <Button
+            variant="outlined"
+            color="primary"
+            component={Link}
+            to="/admin/question-generator"
+            sx={{ mt: 2, mr: 2 }}
+          >
+            AI Question Generator
+          </Button>
         </motion.div>
       </Box>
 

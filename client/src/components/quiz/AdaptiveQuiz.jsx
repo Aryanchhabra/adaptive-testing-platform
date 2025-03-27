@@ -3,13 +3,14 @@ import {
   Box, Container, Typography, Button, Paper, 
   RadioGroup, FormControlLabel, Radio,
   CircularProgress, LinearProgress, Alert,
-  Card, CardContent, Fade, Grow
+  Card, CardContent, Fade, Grow, Grid
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { styled } from '@mui/material/styles';
 import QuizIntro from './QuizIntro';
 import QuizSummary from './QuizSummary';
 import QuizComplete from './QuizComplete';
+import { CheckCircleOutline, CancelOutlined, NavigateNext } from '@mui/icons-material';
 
 // Styled components
 const ProgressBar = styled(LinearProgress)(({ theme }) => ({
@@ -75,7 +76,8 @@ const AdaptiveQuiz = () => {
 
   // Start quiz session
   useEffect(() => {
-    startQuiz();
+    // Don't automatically start the quiz, just initialize loading to false
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -94,6 +96,16 @@ const AdaptiveQuiz = () => {
         setLoading(true);
         setError(null);
         
+        // Reset quiz state
+        setQuestion(null);
+        setSelectedAnswer(null);
+        setFeedback(null);
+        setQuizCompleted(false);
+        setFinalStats(null);
+        setAnalysis(null);
+        setNextQuestion(null);
+        setQuestionNumber(1);
+        
         const response = await fetch('/api/start-quiz', {
             method: 'POST',
             headers: {
@@ -102,35 +114,41 @@ const AdaptiveQuiz = () => {
             }
         });
         
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error response:', errorText);
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
         let data;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
+        try {
             data = await response.json();
+            console.log("Server response:", data); // Debug log
+        } catch (jsonError) {
+            console.error("Failed to parse JSON:", jsonError);
+            throw new Error('Server returned invalid JSON response');
+        }
+        
+        if (!data || data.error) {
+            throw new Error(data?.error || 'Invalid response from server');
+        }
+        
+        if (data.question) {
+            setQuestion(data.question);
+            setSession(data.session_id);
+            setKnowledgeState(data.knowledgeState || data.knowledge_state || {});
+            // Start timing when question is displayed
+            setStartTime(Date.now());
+            // Only set quizStarted to true if the server indicates it should start
+            // or if the server doesn't provide this flag (backward compatibility)
+            setQuizStarted(data.quizStarted !== false);
         } else {
-            throw new Error('Server returned non-JSON response');
-        }
-        
-        console.log("Server response:", data); // Debug log
-        
-        if (data.status === 'error') {
-            throw new Error(data.message);
-        }
-        
-        if (!data.question) {
             throw new Error('No question received from server');
         }
         
-        setQuestion(data.question);
-        if (data.session_id !== undefined) {
-            setSession(data.session_id);
-        }
-        
-        // Start timing when question is displayed
-        setStartTime(Date.now());
-        
     } catch (err) {
         console.error('Error starting quiz:', err);
-        setError(err.message || 'Failed to start quiz');
+        setError(err.message || 'Failed to start quiz. Please try again.');
     } finally {
         setLoading(false);
     }
@@ -158,9 +176,33 @@ const AdaptiveQuiz = () => {
         setIsSubmitting(true);
         setError(null);
 
+        console.log("Submitting answer:", selectedAnswer);
+        console.log("Session ID:", session);
+
+        // Validate required data
+        if (!question || !question.id) {
+            throw new Error("Question data is missing");
+        }
+
         // Calculate response time
         const endTime = Date.now();
         const responseTime = startTime ? (endTime - startTime) / 1000 : 0; // Convert to seconds
+
+        const requestBody = {
+            question: question,
+            answer: selectedAnswer,
+            knowledgeState: knowledgeState,
+            // Include these fields for compatibility with the updated server
+            session_id: session,
+            question_id: question?.id,
+            selected_option: selectedAnswer,
+            answer_data: {
+                selected_answer: selectedAnswer,
+                response_time: responseTime
+            }
+        };
+        
+        console.log("Request body:", requestBody);
 
         const response = await fetch('/api/quiz/submit', {
             method: 'POST',
@@ -168,84 +210,199 @@ const AdaptiveQuiz = () => {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                session_id: session,
-                answer_data: {
-                    selected_answer: selectedAnswer,
-                    response_time: responseTime
-                }
-            })
+            body: JSON.stringify(requestBody)
         });
 
-        const data = await response.json();
-        console.log("Submit response:", data); // Debug log
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error response:', errorText);
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
 
-        if (data.status === 'error') {
-            throw new Error(data.message);
+        let data;
+        try {
+            data = await response.json();
+            console.log("Submit response:", data); // Debug log
+        } catch (jsonError) {
+            console.error("Failed to parse JSON:", jsonError);
+            throw new Error('Server returned invalid JSON response');
+        }
+
+        if (!data || data.status === 'error') {
+            throw new Error(data?.message || 'Error processing answer');
         }
 
         // Update state with feedback
+        console.log("Setting feedback:", data.feedback);
         setFeedback(data.feedback);
+        
+        console.log("Setting next question:", data.next_question);
         setNextQuestion(data.next_question);
-        setKnowledgeState(data.knowledge_state);
+        
+        console.log("Setting knowledge state:", data.knowledge_state);
+        setKnowledgeState(data.knowledge_state || {});
 
         if (data.completed) {
+            console.log("Quiz completed, setting final stats:", data.progress);
             setQuizCompleted(true);
-            setFinalStats(data.progress);
-            setAnalysis(data.analysis);
+            setFinalStats(data.progress || {});
+            setAnalysis(data.analysis || {});
         }
 
     } catch (err) {
         console.error('Error submitting answer:', err);
-        setError(err.message || 'Failed to submit answer');
+        setError(err.message || 'Failed to submit answer. Please try again.');
     } finally {
         setIsSubmitting(false);
     }
   };
 
-  const renderKnowledgeState = () => (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h6" gutterBottom sx={{ 
-        background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        color: 'transparent',
-        fontWeight: 'bold'
-      }}>
-        Knowledge Progress
-      </Typography>
-      <Box sx={{ 
-        display: 'grid', 
-        gap: 3,
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }
-      }}>
-        {Object.entries(knowledgeState).map(([topic, data]) => (
-          <Grow key={topic} in={true}>
-            <Card sx={{ p: 2, height: '100%' }}>
-              <Typography variant="body1" fontWeight="medium" gutterBottom>
-                {topic}
-              </Typography>
+  const renderKnowledgeState = () => {
+    // Skip rendering if knowledgeState is empty or not properly formatted
+    if (!knowledgeState || Object.keys(knowledgeState).length === 0) {
+      return null;
+    }
+
+    // Filter out non-topic keys that shouldn't be displayed as progress bars
+    const topicEntries = Object.entries(knowledgeState).filter(([key]) => 
+      !['level', 'score', 'correct_streak', 'incorrect_streak', 'answered_questions'].includes(key)
+    );
+
+    // If no topic data is available, show a placeholder
+    if (topicEntries.length === 0) {
+      return (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom sx={{ 
+            background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+            fontWeight: 'bold'
+          }}>
+            Knowledge Progress
+          </Typography>
+          <Card sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Answer questions to see your knowledge progress
+            </Typography>
+          </Card>
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ 
+          background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          color: 'transparent',
+          fontWeight: 'bold'
+        }}>
+          Knowledge Progress
+        </Typography>
+        <Box sx={{ 
+          display: 'grid', 
+          gap: 3,
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }
+        }}>
+          {topicEntries.map(([topic, data]) => {
+            // Calculate progress percentage safely
+            const progressValue = typeof data === 'object' && data !== null 
+              ? (data.level ? Math.min(Math.max(data.level * 100, 0), 100) : 0)
+              : (typeof data === 'number' ? Math.min(Math.max(data * 100, 0), 100) : 0);
+            
+            // Get status text safely
+            const statusText = typeof data === 'object' && data !== null && data.status 
+              ? data.status 
+              : progressValue < 33 ? 'Beginner' : progressValue < 66 ? 'Intermediate' : 'Advanced';
+            
+            // Get explanation safely
+            const explanation = typeof data === 'object' && data !== null && data.explanation
+              ? data.explanation
+              : '';
+
+            return (
+              <Grow key={topic} in={true}>
+                <Card sx={{ 
+                  p: 2, 
+                  height: '100%',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.1)',
+                  }
+                }}>
+                  <Typography variant="body1" fontWeight="medium" gutterBottom>
+                    {topic}
+                  </Typography>
+                  <ProgressBar 
+                    variant="determinate" 
+                    value={progressValue} 
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: 'rgba(0,0,0,0.05)',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 4,
+                        background: `linear-gradient(90deg, 
+                          ${progressValue < 33 ? '#64B5F6' : progressValue < 66 ? '#4CAF50' : '#FFA726'}, 
+                          ${progressValue < 33 ? '#2196F3' : progressValue < 66 ? '#388E3C' : '#FB8C00'})`
+                      }
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Status: {statusText}
+                    </Typography>
+                    <Typography variant="caption" fontWeight="medium">
+                      {Math.round(progressValue)}% Mastery
+                    </Typography>
+                  </Box>
+                  {explanation && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      {explanation}
+                    </Typography>
+                  )}
+                </Card>
+              </Grow>
+            );
+          })}
+        </Box>
+        
+        {/* Overall Progress */}
+        <Card sx={{ mt: 3, p: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <Typography variant="body2" fontWeight="medium" gutterBottom>
+            Overall Progress
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ flexGrow: 1 }}>
               <ProgressBar 
                 variant="determinate" 
-                value={data.level * 100} 
+                value={Math.min((knowledgeState.answered_questions?.length || 0) * 10, 100)} 
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: 'rgba(0,0,0,0.05)',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 4,
+                    background: 'linear-gradient(90deg, #0A66C2, #0b7ad4)'
+                  }
+                }}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Status: {data.status}
-                </Typography>
-                <Typography variant="caption">
-                  {Math.round(data.level * 100)}% Mastery
-                </Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                {data.explanation}
-              </Typography>
-            </Card>
-          </Grow>
-        ))}
+            </Box>
+            <Typography variant="body2" fontWeight="medium">
+              {knowledgeState.answered_questions?.length || 0}/{TOTAL_QUESTIONS}
+            </Typography>
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Score: {knowledgeState.score || 0} points
+          </Typography>
+        </Card>
       </Box>
-    </Box>
-  );
+    );
+  };
 
   const handleStartQuiz = () => {
     setQuizStarted(true);
@@ -325,108 +482,308 @@ const AdaptiveQuiz = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <QuestionCard elevation={3}>
-          <CardContent sx={{ p: 4 }}>
-            <ProgressIndicator>
-              <Typography variant="h6" color="primary" fontWeight="bold">
-                Question {questionNumber}/{TOTAL_QUESTIONS}
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={(questionNumber / TOTAL_QUESTIONS) * 100}
-                sx={{ 
-                  flexGrow: 1, 
-                  height: 8, 
-                  borderRadius: 4,
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
-                  }
-                }} 
-              />
-            </ProgressIndicator>
+        <Grid container spacing={3}>
+          {/* Left column - Question */}
+          <Grid item xs={12} md={8}>
+            <QuestionCard elevation={3}>
+              <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
+                <ProgressIndicator>
+                  <Typography variant="h6" color="primary" fontWeight="bold">
+                    Question {questionNumber}/{TOTAL_QUESTIONS}
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(questionNumber / TOTAL_QUESTIONS) * 100}
+                    sx={{ 
+                      flexGrow: 1, 
+                      height: 8, 
+                      borderRadius: 4,
+                      backgroundColor: 'rgba(0,0,0,0.1)',
+                      '& .MuiLinearProgress-bar': {
+                        background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                      }
+                    }} 
+                  />
+                </ProgressIndicator>
 
-            {question ? (
-                <>
-                    <Typography variant="h5" gutterBottom>
-                        {question.text}
-                    </Typography>
-                    
-                    <Box sx={{ my: 3 }}>
-                        <RadioGroup
-                            value={selectedAnswer}
-                            onChange={(e) => setSelectedAnswer(Number(e.target.value))}
+                {question ? (
+                    <>
+                        <Box sx={{ 
+                          mb: 3, 
+                          p: 3, 
+                          borderRadius: 2, 
+                          bgcolor: 'rgba(10, 102, 194, 0.05)',
+                          border: '1px solid rgba(10, 102, 194, 0.1)'
+                        }}>
+                          <Typography 
+                            variant="h5" 
+                            gutterBottom
+                            sx={{ 
+                              fontWeight: 500,
+                              color: 'text.primary',
+                              lineHeight: 1.4
+                            }}
+                          >
+                              {question.text}
+                          </Typography>
+                          
+                          {question.code && (
+                            <Box 
+                              component="pre" 
+                              sx={{ 
+                                mt: 2,
+                                p: 2, 
+                                borderRadius: 1, 
+                                bgcolor: 'grey.900',
+                                color: 'common.white',
+                                overflowX: 'auto',
+                                fontSize: '0.9rem',
+                                fontFamily: 'monospace'
+                              }}
+                            >
+                              <code>{question.code}</code>
+                            </Box>
+                          )}
+                        </Box>
+                        
+                        <Typography 
+                          variant="subtitle1" 
+                          sx={{ 
+                            mb: 2, 
+                            fontWeight: 500,
+                            color: 'text.secondary' 
+                          }}
                         >
+                          Select the correct answer:
+                        </Typography>
+                        
+                        <Box sx={{ my: 3 }}>
                             {question.options.map((option, index) => (
                                 <Fade in={true} key={index} style={{ transitionDelay: `${index * 50}ms` }}>
-                                    <OptionButton
-                                        value={index}
-                                        control={<Radio />}
-                                        label={option}
-                                        disabled={feedback !== null}
-                                    />
+                                    <Button
+                                        fullWidth
+                                        variant={selectedAnswer === index ? "contained" : "outlined"}
+                                        onClick={() => setSelectedAnswer(index)}
+                                        disabled={feedback !== null || isSubmitting}
+                                        sx={{ 
+                                            mt: 1.5,
+                                            p: 2,
+                                            justifyContent: 'flex-start',
+                                            textAlign: 'left',
+                                            borderRadius: 2,
+                                            textTransform: 'none',
+                                            fontWeight: 'normal',
+                                            fontSize: '1rem',
+                                            lineHeight: 1.5,
+                                            position: 'relative',
+                                            borderColor: selectedAnswer === index ? 'primary.main' : 'grey.300',
+                                            bgcolor: selectedAnswer === index ? 'primary.main' : 
+                                                    (feedback && index === question.correctAnswer) ? 'success.light' :
+                                                    (feedback && selectedAnswer === index) ? 'error.light' : 'background.paper',
+                                            color: selectedAnswer === index ? 'white' : 
+                                                  (feedback && (index === question.correctAnswer || selectedAnswer === index)) ? 'white' : 'text.primary',
+                                            '&:hover': {
+                                                bgcolor: selectedAnswer === index ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                                            },
+                                            '&.Mui-disabled': {
+                                                opacity: 0.8,
+                                                color: feedback ? (
+                                                    index === question.correctAnswer ? 'white' :
+                                                    selectedAnswer === index ? 'white' : 'text.primary'
+                                                ) : 'text.disabled'
+                                            }
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                            <Box 
+                                                sx={{ 
+                                                    minWidth: 28, 
+                                                    height: 28, 
+                                                    borderRadius: '50%', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    mr: 2,
+                                                    bgcolor: selectedAnswer === index ? 'white' : 'primary.main',
+                                                    color: selectedAnswer === index ? 'primary.main' : 'white',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {String.fromCharCode(65 + index)}
+                                            </Box>
+                                            <Typography 
+                                                variant="body1" 
+                                                sx={{ 
+                                                    flexGrow: 1,
+                                                    fontWeight: selectedAnswer === index ? 500 : 400
+                                                }}
+                                            >
+                                                {option}
+                                            </Typography>
+                                            {feedback && index === question.correctAnswer && (
+                                                <CheckCircleOutline sx={{ ml: 1, color: 'success.main' }} />
+                                            )}
+                                            {feedback && selectedAnswer === index && index !== question.correctAnswer && (
+                                                <CancelOutlined sx={{ ml: 1, color: 'error.main' }} />
+                                            )}
+                                        </Box>
+                                    </Button>
                                 </Fade>
                             ))}
-                        </RadioGroup>
-                    </Box>
+                        </Box>
 
-                    {feedback && (
-                        <Fade in={true}>
-                            <Box sx={{ 
-                                mt: 2, 
-                                p: 2, 
-                                bgcolor: feedback.is_correct ? 'success.light' : 'error.light',
-                                borderRadius: 1
-                            }}>
-                                <Typography variant="h6">
-                                    {feedback.is_correct ? 'Correct!' : 'Incorrect'}
-                                </Typography>
-                                <Typography>
-                                    {feedback.explanation}
-                                </Typography>
-                                {!feedback.is_correct && (
-                                    <Typography>
-                                        Correct answer: {question.options[feedback.correct_answer]}
+                        {feedback && (
+                            <Fade in={true}>
+                                <Box sx={{ 
+                                    mt: 3, 
+                                    p: 3, 
+                                    bgcolor: feedback.isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                    borderRadius: 2,
+                                    border: `1px solid ${feedback.isCorrect ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)'}`,
+                                }}>
+                                    <Typography variant="h6" color={feedback.isCorrect ? 'success.main' : 'error.main'} gutterBottom>
+                                        {feedback.isCorrect ? '✓ Correct!' : '✗ Incorrect'}
                                     </Typography>
-                                )}
-                            </Box>
-                        </Fade>
-                    )}
-
-                    <Button
-                        variant="contained"
-                        onClick={feedback ? handleNextQuestion : () => submitAnswer(selectedAnswer)}
-                        disabled={!feedback && selectedAnswer === null}
-                        sx={{ 
-                            mt: 3,
-                            minWidth: 120,
-                            backgroundColor: feedback ? 'success.main' : 'primary.main'
-                        }}
-                    >
-                        {isSubmitting ? (
-                            <CircularProgress size={24} color="inherit" />
-                        ) : feedback ? (
-                            'Next Question'
-                        ) : (
-                            'Submit Answer'
+                                    <Typography variant="body1">
+                                        {feedback.explanation}
+                                    </Typography>
+                                </Box>
+                            </Fade>
                         )}
-                    </Button>
-                </>
-            ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                    <CircularProgress />
-                </Box>
-            )}
 
-            {renderKnowledgeState()}
-          </CardContent>
-        </QuestionCard>
+                        {/* Submit/Next button - now positioned within the card */}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'center',
+                          mt: 4,
+                          mb: 2
+                        }}>
+                          {error && (
+                            <Fade in={true}>
+                              <Alert 
+                                severity="error" 
+                                sx={{ 
+                                  position: 'absolute', 
+                                  bottom: '100%', 
+                                  mb: 2, 
+                                  width: 'calc(100% - 48px)',
+                                  maxWidth: '600px',
+                                  boxShadow: 2
+                                }}
+                                onClose={() => setError(null)}
+                              >
+                                {error}
+                              </Alert>
+                            </Fade>
+                          )}
+                          
+                          <Button
+                              variant="contained"
+                              onClick={feedback ? handleNextQuestion : () => submitAnswer(selectedAnswer)}
+                              disabled={(!feedback && selectedAnswer === null) || isSubmitting}
+                              sx={{ 
+                                  minWidth: 200,
+                                  py: 1.5,
+                                  px: 3,
+                                  fontSize: '1rem',
+                                  fontWeight: 500,
+                                  background: feedback 
+                                    ? 'linear-gradient(45deg, #4caf50, #45a049)'
+                                    : 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                                  boxShadow: 3,
+                                  borderRadius: 2,
+                                  color: '#ffffff',
+                                  '&:hover': {
+                                    background: feedback 
+                                      ? 'linear-gradient(45deg, #45a049, #3d8b3d)'
+                                      : 'linear-gradient(45deg, #0b7ad4, #0A66C2)',
+                                    boxShadow: 6,
+                                    transform: 'translateY(-2px)'
+                                  },
+                                  '&.Mui-disabled': {
+                                    background: 'rgba(0, 0, 0, 0.12)',
+                                    color: 'rgba(0, 0, 0, 0.26)'
+                                  },
+                                  transition: 'all 0.2s'
+                              }}
+                              startIcon={feedback ? <NavigateNext /> : null}
+                              endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                          >
+                              {isSubmitting ? 'Submitting...' : feedback ? 'Next Question' : 'Submit Answer'}
+                          </Button>
+                        </Box>
+                    </>
+                ) : (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                )}
+              </CardContent>
+            </QuestionCard>
+          </Grid>
+          
+          {/* Right column - Knowledge Progress */}
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              position: { md: 'sticky' },
+              top: { md: 24 },
+              maxHeight: { md: 'calc(100vh - 48px)' },
+              overflow: 'auto'
+            }}>
+              <Card elevation={3} sx={{ mb: 2 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom sx={{ 
+                    background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent',
+                    fontWeight: 'bold'
+                  }}>
+                    Quiz Progress
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="body2">
+                      Question {questionNumber} of {TOTAL_QUESTIONS}
+                    </Typography>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={(questionNumber / TOTAL_QUESTIONS) * 100}
+                      sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} 
+                    />
+                  </Box>
+                  {finalStats && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2">
+                        Accuracy: {Math.round(finalStats.accuracy * 100)}%
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={finalStats.accuracy * 100}
+                        sx={{ 
+                          flexGrow: 1, 
+                          height: 6, 
+                          borderRadius: 3,
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: 'success.main'
+                          }
+                        }} 
+                      />
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Knowledge State Cards */}
+              {renderKnowledgeState()}
+            </Box>
+          </Grid>
+        </Grid>
       </motion.div>
     </Container>
   );

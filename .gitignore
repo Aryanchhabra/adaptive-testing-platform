@@ -23,15 +23,18 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+venv/
 
 # Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
 # IDE
 .idea/
@@ -48,4 +51,9 @@ data/db/
 
 # Logs
 logs
-*.log 
+*.log
+
+# Project specific
+server/data/
+*.db
+*.sqlite3 

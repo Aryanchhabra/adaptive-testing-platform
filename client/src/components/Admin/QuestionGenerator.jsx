@@ -1,196 +1,324 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
   Box,
-  Typography,
-  Paper,
-  TextField,
   Button,
+  Card,
+  CardContent,
+  Container,
   FormControl,
+  Grid,
   InputLabel,
-  Select,
   MenuItem,
-  CircularProgress,
+  Paper,
+  Select,
+  Slider,
+  TextField,
+  Typography,
   Alert,
-  Snackbar,
+  CircularProgress,
+  Chip,
+  Divider,
   List,
   ListItem,
   ListItemText,
-  Divider,
   Accordion,
   AccordionSummary,
   AccordionDetails
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {
+  Add as AddIcon,
+  ExpandMore as ExpandMoreIcon,
+  Check as CheckIcon,
+  Error as ErrorIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 
-const API_URL = 'http://localhost:5000/api';
+const TOPICS = [
+  'Python Basics',
+  'Data Types',
+  'Control Flow',
+  'Functions',
+  'Object-Oriented Programming',
+  'Modules and Packages',
+  'File Handling',
+  'Exception Handling',
+  'Regular Expressions',
+  'Data Structures',
+  'Algorithms',
+  'Advanced Concepts'
+];
 
 const QuestionGenerator = () => {
-  const [topic, setTopic] = useState('Basic Python Syntax');
+  const [topic, setTopic] = useState('Python Basics');
   const [difficulty, setDifficulty] = useState(1);
   const [count, setCount] = useState(5);
+  const [customTopic, setCustomTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  const topics = [
-    'Basic Python Syntax',
-    'Data Types and Variables',
-    'Control Flow',
-    'Functions',
-    'Lists and Dictionaries',
-    'Object-Oriented Programming',
-    'File Handling',
-    'Error Handling',
-    'Modules and Packages'
-  ];
+  const handleTopicChange = (event) => {
+    const value = event.target.value;
+    setTopic(value);
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    
+  const handleDifficultyChange = (event, newValue) => {
+    setDifficulty(newValue);
+  };
+
+  const handleCountChange = (event, newValue) => {
+    setCount(newValue);
+  };
+
+  const handleCustomTopicChange = (event) => {
+    setCustomTopic(event.target.value);
+  };
+
+  const getDifficultyLabel = (value) => {
+    return ['Beginner', 'Intermediate', 'Advanced'][value - 1];
+  };
+
+  const generateQuestions = async () => {
     try {
-      const response = await axios.post(`${API_URL}/admin/generate-questions`, {
-        topic,
-        difficulty,
-        count: parseInt(count)
+      setLoading(true);
+      setError(null);
+      setResult(null);
+
+      const finalTopic = topic === 'Custom' ? customTopic : topic;
+
+      const response = await fetch('/api/admin/generate-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic: finalTopic,
+          difficulty,
+          count
+        }),
       });
-      
-      setResult(response.data);
-      setSnackbarOpen(true);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Received data:", data);
+
+      if (!data || !data.questions) {
+        throw new Error('Invalid response format from server');
+      }
+
+      setResult(data);
     } catch (err) {
       console.error('Error generating questions:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to generate questions');
+      setError(err.message || 'Failed to generate questions');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 8, px: 2 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
           AI Question Generator
         </Typography>
-        
-        <Typography variant="body1" sx={{ mb: 3 }}>
-          Generate AI-powered questions for your adaptive testing platform.
+        <Typography variant="body1" color="text.secondary" paragraph>
+          Generate Python programming questions using OpenAI. Questions will be stored in the database for use in quizzes.
         </Typography>
-        
-        <form onSubmit={handleSubmit}>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Topic</InputLabel>
-            <Select
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              label="Topic"
-            >
-              {topics.map((t) => (
-                <MenuItem key={t} value={t}>{t}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Difficulty</InputLabel>
-            <Select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              label="Difficulty"
-            >
-              <MenuItem value={1}>Beginner</MenuItem>
-              <MenuItem value={2}>Intermediate</MenuItem>
-              <MenuItem value={3}>Advanced</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <TextField
-            fullWidth
-            label="Number of Questions"
-            type="number"
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-            InputProps={{ inputProps: { min: 1, max: 20 } }}
-            sx={{ mb: 3 }}
-          />
-          
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={loading}
-            sx={{ minWidth: 150 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Generate Questions'}
-          </Button>
-        </form>
-        
-        {error && (
-          <Alert severity="error" sx={{ mt: 3 }}>
-            {error}
-          </Alert>
-        )}
-        
-        {result && (
-          <Box sx={{ mt: 4 }}>
-            <Alert severity="success" sx={{ mb: 3 }}>
-              Successfully generated {result.questions.length} questions!
-            </Alert>
-            
-            <Typography variant="h6" gutterBottom>
-              Generated Questions:
-            </Typography>
-            
-            {result.questions.map((question, index) => (
-              <Accordion key={index} sx={{ mb: 2 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography>
-                    Question {index + 1}: {question.text.substring(0, 60)}...
+
+        <Divider sx={{ my: 3 }} />
+
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined" sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Generation Settings
+                </Typography>
+
+                <Box sx={{ mb: 3 }}>
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel id="topic-label">Topic</InputLabel>
+                    <Select
+                      labelId="topic-label"
+                      value={topic}
+                      onChange={handleTopicChange}
+                      label="Topic"
+                    >
+                      {TOPICS.map((t) => (
+                        <MenuItem key={t} value={t}>
+                          {t}
+                        </MenuItem>
+                      ))}
+                      <MenuItem value="Custom">Custom Topic</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {topic === 'Custom' && (
+                    <TextField
+                      fullWidth
+                      label="Custom Topic"
+                      variant="outlined"
+                      value={customTopic}
+                      onChange={handleCustomTopicChange}
+                      sx={{ mb: 3 }}
+                      placeholder="e.g., Python List Comprehensions"
+                    />
+                  )}
+
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom>
+                      Difficulty: {getDifficultyLabel(difficulty)}
+                    </Typography>
+                    <Slider
+                      value={difficulty}
+                      onChange={handleDifficultyChange}
+                      step={1}
+                      marks
+                      min={1}
+                      max={3}
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={getDifficultyLabel}
+                    />
+                  </Box>
+
+                  <Box sx={{ mb: 3 }}>
+                    <Typography gutterBottom>
+                      Number of Questions: {count}
+                    </Typography>
+                    <Slider
+                      value={count}
+                      onChange={handleCountChange}
+                      step={1}
+                      marks
+                      min={1}
+                      max={10}
+                      valueLabelDisplay="auto"
+                    />
+                  </Box>
+
+                  <Box sx={{ mt: 4 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+                      onClick={generateQuestions}
+                      disabled={loading || (topic === 'Custom' && !customTopic)}
+                      fullWidth
+                      sx={{ py: 1.5 }}
+                    >
+                      {loading ? 'Generating...' : 'Generate Questions'}
+                    </Button>
+                  </Box>
+                </Box>
+
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Note: Generation is limited to control API costs. Each question costs approximately $0.001-$0.002.
                   </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography variant="body1" gutterBottom>
-                    {question.text}
-                  </Typography>
-                  
-                  <List>
-                    {question.options.map((option, optIndex) => (
-                      <ListItem key={optIndex} sx={{
-                        bgcolor: optIndex === question.correct_answer ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-                        borderLeft: optIndex === question.correct_answer ? '3px solid #4caf50' : 'none',
-                        pl: optIndex === question.correct_answer ? 2 : 1
-                      }}>
-                        <ListItemText 
-                          primary={`${String.fromCharCode(65 + optIndex)}. ${option}`} 
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                  
-                  <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 'bold' }}>
-                    Explanation:
-                  </Typography>
-                  <Typography variant="body2">
-                    {question.explanation}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-        )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined" sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Generation Results
+                </Typography>
+
+                {error && (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                  </Alert>
+                )}
+
+                {loading && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', my: 4 }}>
+                    <CircularProgress size={60} thickness={4} />
+                    <Typography sx={{ mt: 2 }}>
+                      Generating questions... This may take up to 30 seconds.
+                    </Typography>
+                  </Box>
+                )}
+
+                {result && (
+                  <Box>
+                    <Alert severity="success" sx={{ mb: 3 }}>
+                      {result.message || `Successfully generated ${result.questions.length} questions`}
+                    </Alert>
+
+                    <Box sx={{ mb: 2 }}>
+                      <Chip
+                        icon={<InfoIcon />}
+                        label={`${result.questions.length} Questions Generated`}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
+
+                    {result.questions.length > 0 ? (
+                      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                        {result.questions.map((question, index) => (
+                          <Accordion key={index} sx={{ mb: 1 }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography>
+                                Question {index + 1}: {question.text.substring(0, 60)}
+                                {question.text.length > 60 ? '...' : ''}
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <Typography variant="body2" paragraph>
+                                {question.text}
+                              </Typography>
+                              <List dense>
+                                {question.options.map((option, optIndex) => (
+                                  <ListItem key={optIndex}>
+                                    {optIndex === question.correctAnswer ? (
+                                      <CheckIcon color="success" sx={{ mr: 1 }} />
+                                    ) : (
+                                      <Box sx={{ width: 24, mr: 1 }} />
+                                    )}
+                                    <ListItemText primary={option} />
+                                  </ListItem>
+                                ))}
+                              </List>
+                              <Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                                Explanation:
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {question.explanation}
+                              </Typography>
+                            </AccordionDetails>
+                          </Accordion>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography color="text.secondary">
+                        No questions were generated. Please try again.
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+
+                {!loading && !error && !result && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
+                    <Typography color="text.secondary">
+                      Generated questions will appear here
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       </Paper>
-      
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        message="Questions generated and added to database"
-      />
-    </Box>
+    </Container>
   );
 };
 

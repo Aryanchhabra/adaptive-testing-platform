@@ -4,16 +4,30 @@ from services.adaptive_selector import AdaptiveSelector
 from services.analysis_service import AnalysisService
 from config.mongodb import MongoDB
 from bson.objectid import ObjectId
+import time
+import uuid
 
 class QuizSession:
-    def __init__(self, session_id: int, total_questions: int = 10):
-        self.session_id = session_id
-        self.selector = AdaptiveSelector()
-        self.questions_asked = set()
-        self.current_streak = 0
-        self.total_questions = total_questions
+    def __init__(self):
+        # Generate a unique session ID
+        self.session_id = str(uuid.uuid4())
+        
+        # Initialize ability estimate (0 = average)
+        self.current_ability = 0
+        
+        # Track questions and answers
         self.questions_answered = 0
         self.correct_answers = 0
+        
+        # Track time
+        self.start_time = time.time()
+        
+        # Initialize adaptive selector
+        self.selector = AdaptiveSelector()
+        
+        self.questions_asked = set()
+        self.current_streak = 0
+        self.total_questions = 10
         self.topic_performance = {
             "Basic Python Syntax": {"attempts": 0, "correct": 0},
             "Data Types": {"attempts": 0, "correct": 0},
@@ -21,7 +35,6 @@ class QuizSession:
             "Functions": {"attempts": 0, "correct": 0},
             "OOP": {"attempts": 0, "correct": 0}
         }
-        self.start_time = datetime.now()
         self.response_times = []
         self.current_question = None
         self.knowledge_state = self.selector.knowledge_state
@@ -38,6 +51,21 @@ class QuizSession:
         if self.questions_answered == 0:
             return 0.0
         return self.correct_answers / self.questions_answered
+
+    def update_ability(self, question_difficulty, is_correct):
+        """Update the ability estimate based on the answer"""
+        self.questions_answered += 1
+        if is_correct:
+            self.correct_answers += 1
+        
+        # Use the adaptive selector to update ability
+        self.current_ability = self.selector.update_ability(
+            self.current_ability, 
+            question_difficulty, 
+            is_correct
+        )
+        
+        return self.current_ability
 
     def update_performance(self, topic: str, is_correct: bool, response_time: float):
         """Update session performance metrics"""

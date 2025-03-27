@@ -15,15 +15,30 @@ db = None
 def init_db():
     """Initialize database connection"""
     global client, db
-    mongo_uri = os.getenv('MONGODB_URL', 'mongodb://localhost:27017')
-    db_name = os.getenv('DATABASE_NAME', 'adaptive_test_ai')
     
     try:
+        # Get connection details from environment variables
+        mongo_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017')
+        db_name = os.getenv('MONGODB_DB_NAME', 'adaptive_quiz')
+        
+        print(f"Connecting to MongoDB at: {mongo_uri.split('@')[0]}@[...]")
+        
+        # Connect to MongoDB
         client = MongoClient(mongo_uri)
         db = client[db_name]
+        
+        # Test connection
+        db.command('ping')
         print(f"Connected to MongoDB: {db_name}")
+        
+        # Create indexes if needed
+        if 'questions' in db.list_collection_names():
+            db.questions.create_index('topic')
+            db.questions.create_index('difficulty')
+        
     except Exception as e:
         print(f"Error connecting to MongoDB: {e}")
+        raise
         
 def get_db():
     """Get database instance"""

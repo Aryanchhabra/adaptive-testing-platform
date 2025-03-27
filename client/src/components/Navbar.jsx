@@ -1,13 +1,23 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { LoginButton } from './Auth/LoginButton';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useTheme } from '@mui/material/styles';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 function Navbar() {
   const { user } = useAuthContext();
   const theme = useTheme();
+  const [adminMenuAnchor, setAdminMenuAnchor] = React.useState(null);
+
+  const handleAdminMenuOpen = (event) => {
+    setAdminMenuAnchor(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchor(null);
+  };
 
   const navItems = [
     { text: 'Home', path: '/' },
@@ -56,6 +66,36 @@ function Navbar() {
               {item.text}
             </Button>
           ))}
+
+          {/* Admin Menu */}
+          {user && user.isAdmin && (
+            <>
+              <IconButton 
+                color="inherit" 
+                onClick={handleAdminMenuOpen}
+                aria-label="Admin menu"
+                aria-controls="admin-menu"
+                aria-haspopup="true"
+              >
+                <AdminPanelSettingsIcon />
+              </IconButton>
+              <Menu
+                id="admin-menu"
+                anchorEl={adminMenuAnchor}
+                keepMounted
+                open={Boolean(adminMenuAnchor)}
+                onClose={handleAdminMenuClose}
+              >
+                <MenuItem 
+                  component={Link} 
+                  to="/admin/question-generator" 
+                  onClick={handleAdminMenuClose}
+                >
+                  Generate Questions
+                </MenuItem>
+              </Menu>
+            </>
+          )}
 
           <LoginButton />
           
