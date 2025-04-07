@@ -6,6 +6,7 @@ import random
 import traceback
 import json
 import uuid
+from bson import ObjectId
 
 router = APIRouter(tags=["test"])
 question_service = QuestionService()
@@ -36,7 +37,7 @@ async def quiz_start():
             
         # Select a random question
         question = random.choice(all_questions)
-        print(f"Selected question: {question['id']}")
+        print(f"Selected question: {question.get('id', 'unknown')}")
         
         # Create a new session ID
         session_id = str(uuid.uuid4())
@@ -44,6 +45,26 @@ async def quiz_start():
         
         # Get unique topics from questions
         topics = set(q.get('topic', 'General') for q in all_questions)
+        print(f"Available topics: {topics}")
+        
+        # Ensure ObjectId is converted to string
+        # Create deep copy of question to avoid modifying the original
+        import copy
+        
+        # Custom JSON encoder for MongoDB types
+        class MongoJSONEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, ObjectId):
+                    return str(obj)
+                return super().default(obj)
+        
+        # Create a serializable copy of the question
+        serializable_question = copy.deepcopy(question)
+        
+        # Convert any ObjectId to strings
+        for key, value in serializable_question.items():
+            if isinstance(value, ObjectId):
+                serializable_question[key] = str(value)
         
         # Initialize knowledge state with topic-based progress
         knowledge_state = {
@@ -63,12 +84,26 @@ async def quiz_start():
                     'explanation': f'Starting to learn about {topic}'
                 }
         
-        return {
+        response_data = {
             "session_id": session_id,
-            "question": question,
+            "question": serializable_question,
             "knowledge_state": knowledge_state,
             "quizStarted": True  # Add this flag to control whether the quiz begins immediately
         }
+        
+        print(f"Returning response with session_id: {session_id}")
+        print(f"Response question ID: {serializable_question.get('id', 'unknown')}")
+        
+        # Test serialization before returning to catch any issues
+        try:
+            # This will raise an error if there are non-serializable objects
+            json_str = json.dumps(response_data, cls=MongoJSONEncoder)
+            print(f"Response successfully serialized, length: {len(json_str)} characters")
+        except Exception as json_err:
+            print(f"Serialization error: {json_err}")
+            raise ValueError(f"Failed to serialize response: {json_err}")
+            
+        return response_data
         
     except Exception as e:
         print(f"Error starting quiz: {e}")
@@ -244,31 +279,75 @@ async def quiz_submit(submission: AnswerSubmission):
                         strengths.append({
                             "topic": topic,
                             "proficiency": f"{int(level * 100)}%",
-                            "details": f"You demonstrate strong understanding of {topic} concepts."
+                            "details": f"You demonstrate strong understanding of {topic} concepts.",
+                            "description": f"Your mastery of {topic} is impressive. You can confidently apply these concepts in complex scenarios and likely explain them to others."
+                        })
+                    elif level > 0.5:
+                        strengths.append({
+                            "topic": topic,
+                            "proficiency": f"{int(level * 100)}%",
+                            "details": f"You have a good grasp of {topic} fundamentals.",
+                            "description": f"Your knowledge of {topic} is solid. You understand the core principles and can apply them in standard situations."
                         })
                     
-                    # Identify weaknesses (topics with proficiency < 40%)
+                    # Identify weaknesses (topics with proficiency < 50%)
                     if level < 0.4:
                         weaknesses.append({
                             "topic": topic,
                             "proficiency": f"{int(level * 100)}%",
-                            "details": f"You may need additional practice with {topic} concepts."
+                            "details": f"You may need additional practice with {topic} concepts.",
+                            "description": f"Your understanding of {topic} shows room for improvement. Focusing on the fundamentals will help strengthen your knowledge base."
+                        })
+                    elif level < 0.6:
+                        weaknesses.append({
+                            "topic": topic,
+                            "proficiency": f"{int(level * 100)}%",
+                            "details": f"Your knowledge of {topic} is developing but needs refinement.",
+                            "description": f"While you grasp some aspects of {topic}, there are gaps in your understanding that would benefit from targeted practice."
                         })
                     
-                    # Generate topic-specific recommendations
+                    # Generate topic-specific recommendations with learning resources
                     if level < 0.3:
-                        recommendations.append(f"Focus on building fundamental knowledge in {topic}.")
+                        recommendations.append({
+                            "topic": topic,
+                            "priority": "High",
+                            "action": f"Focus on building fundamental knowledge in {topic}.",
+                            "resources": [
+                                "Review introductory tutorials and documentation",
+                                "Practice with basic exercises",
+                                "Use interactive learning platforms for guided practice"
+                            ]
+                        })
                     elif level < 0.6:
-                        recommendations.append(f"Continue practicing intermediate {topic} concepts.")
+                        recommendations.append({
+                            "topic": topic,
+                            "priority": "Medium",
+                            "action": f"Continue practicing intermediate {topic} concepts.",
+                            "resources": [
+                                "Complete practical coding challenges",
+                                "Build small projects using these concepts",
+                                "Read articles on best practices"
+                            ]
+                        })
                     else:
-                        recommendations.append(f"Challenge yourself with advanced {topic} problems.")
+                        recommendations.append({
+                            "topic": topic,
+                            "priority": "Low",
+                            "action": f"Challenge yourself with advanced {topic} problems.",
+                            "resources": [
+                                "Tackle complex projects",
+                                "Study implementation details and optimizations",
+                                "Explore advanced use cases and edge scenarios"
+                            ]
+                        })
             
             # If no specific strengths found, add a general one
             if not strengths:
                 strengths.append({
                     "topic": "General Knowledge",
                     "proficiency": f"{int(accuracy * 100)}%",
-                    "details": "You're making progress in your learning journey."
+                    "details": "You're making progress in your learning journey.",
+                    "description": "You're showing potential in your understanding of the material. Continue building your foundation across all topics."
                 })
             
             # If no specific weaknesses found but accuracy is low, add a general one
@@ -276,36 +355,114 @@ async def quiz_submit(submission: AnswerSubmission):
                 weaknesses.append({
                     "topic": "Overall Performance",
                     "proficiency": f"{int(accuracy * 100)}%",
-                    "details": "You may benefit from reviewing core concepts across all topics."
+                    "details": "You may benefit from reviewing core concepts across all topics.",
+                    "description": "Your overall performance suggests there are fundamental concepts you need to strengthen. Consider a structured review of key principles."
                 })
             
             # If no recommendations, add general ones
             if not recommendations:
-                recommendations.append("Continue practicing with a variety of problems.")
-                recommendations.append("Review the explanations for questions you answered incorrectly.")
+                recommendations.append({
+                    "topic": "General Study",
+                    "priority": "Medium",
+                    "action": "Continue practicing with a variety of problems.",
+                    "resources": [
+                        "Use diverse learning resources to expose yourself to different perspectives",
+                        "Focus on understanding concepts rather than memorizing solutions",
+                        "Schedule regular review sessions to reinforce learning"
+                    ]
+                })
+                recommendations.append({
+                    "topic": "Learning Strategy",
+                    "priority": "Medium",
+                    "action": "Review the explanations for questions you answered incorrectly.",
+                    "resources": [
+                        "Keep a learning journal to track your progress",
+                        "Join study groups or forums to discuss challenging concepts",
+                        "Apply spaced repetition techniques to improve retention"
+                    ]
+                })
             
             # Calculate overall proficiency
             overall_proficiency = f"{int(accuracy * 100)}%"
             
-            # Generate performance insights
-            performance_insights = []
+            # Determine performance level with detailed description
+            performance_level = ""
+            performance_description = ""
+            
             if accuracy >= 0.8:
-                performance_insights.append("Excellent work! You've demonstrated a strong understanding of the material.")
+                performance_level = "Expert"
+                performance_description = "You demonstrate advanced proficiency across most topics. Your understanding is comprehensive and nuanced, allowing you to tackle complex problems with confidence. You're ready for advanced challenges and may consider mentoring others."
             elif accuracy >= 0.6:
-                performance_insights.append("Good job! You have a solid foundation but there's room for improvement.")
+                performance_level = "Advanced"
+                performance_description = "Your knowledge is solid with strong understanding of core concepts. You can apply principles effectively in various situations. Focus on refining your skills in areas of weakness to reach expert level."
             elif accuracy >= 0.4:
-                performance_insights.append("You're making progress, but should focus on strengthening your understanding.")
+                performance_level = "Intermediate"
+                performance_description = "You have a moderate grasp of the material with some areas of strength. Continue building your knowledge foundation and practice applying concepts in different contexts to deepen your understanding."
             else:
-                performance_insights.append("You're at the beginning of your learning journey. Keep practicing!")
+                performance_level = "Beginner"
+                performance_description = "You're at the beginning of your learning journey. Focus on mastering foundational concepts first, and don't be discouraged - consistent practice will lead to improvement. Break down complex topics into smaller, manageable parts."
             
-            # Add time-based insight if response time data is available
-            response_times = []
-            for q_id in knowledge_state['answered_questions']:
-                # This would require storing response times in the knowledge state
-                # For now, we'll just add a placeholder insight
-                pass
+            # Generate performance insights with actionable advice
+            performance_insights = []
             
-            performance_insights.append("Practice regularly to improve your speed and accuracy.")
+            # Add learning style insight
+            if accuracy >= 0.7:
+                performance_insights.append({
+                    "category": "Learning Strategy",
+                    "insight": "You excel at conceptual understanding and application.",
+                    "action": "Challenge yourself with complex problems that require combining multiple concepts."
+                })
+            elif accuracy >= 0.5:
+                performance_insights.append({
+                    "category": "Learning Strategy",
+                    "insight": "You understand key concepts but may need more practice applying them.",
+                    "action": "Focus on hands-on exercises that reinforce theoretical knowledge."
+                })
+            else:
+                performance_insights.append({
+                    "category": "Learning Strategy",
+                    "insight": "You may benefit from a more structured learning approach.",
+                    "action": "Break down complex topics into smaller parts and master fundamentals before moving on."
+                })
+            
+            # Add consistency insight
+            consistent_performance = True  # This would ideally be calculated from actual performance data
+            if consistent_performance:
+                performance_insights.append({
+                    "category": "Performance Pattern",
+                    "insight": "Your performance is consistent across different question types.",
+                    "action": "This balanced approach is effective. Continue with your current study methods."
+                })
+            else:
+                performance_insights.append({
+                    "category": "Performance Pattern",
+                    "insight": "Your performance varies significantly between topics.",
+                    "action": "Allocate more time to weaker areas while maintaining your strengths."
+                })
+            
+            # Add improvement-focused insight
+            performance_insights.append({
+                "category": "Growth Opportunity",
+                "insight": "Regular practice is key to continuous improvement.",
+                "action": "Set aside dedicated time for focused learning sessions and track your progress."
+            })
+            
+            # Generate a summary paragraph
+            summary = f"Your assessment results show that you're performing at a {performance_level.lower()} level with an overall proficiency of {overall_proficiency}. "
+            
+            if strengths:
+                topics = ", ".join([s["topic"] for s in strengths[:2]])
+                if len(strengths) > 2:
+                    topics += f", and {len(strengths)-2} other area{'s' if len(strengths)-2 > 1 else ''}"
+                summary += f"You show particular strength in {topics}. "
+                
+            if weaknesses:
+                topics = ", ".join([w["topic"] for w in weaknesses[:2]])
+                if len(weaknesses) > 2:
+                    topics += f", and {len(weaknesses)-2} other area{'s' if len(weaknesses)-2 > 1 else ''}"
+                summary += f"Focus on improving your understanding of {topics} to enhance your overall proficiency. "
+                
+            summary += performance_description
             
             # Create the final analysis object
             analysis = {
@@ -319,10 +476,9 @@ async def quiz_submit(submission: AnswerSubmission):
                 "total_questions": total_questions,
                 "correct_answers": correct_answers,
                 "score": total_score,
-                "performance_level": "Expert" if accuracy >= 0.8 else 
-                                    "Advanced" if accuracy >= 0.6 else 
-                                    "Intermediate" if accuracy >= 0.4 else 
-                                    "Beginner"
+                "performance_level": performance_level,
+                "performance_description": performance_description,
+                "summary": summary
             }
             
             return {

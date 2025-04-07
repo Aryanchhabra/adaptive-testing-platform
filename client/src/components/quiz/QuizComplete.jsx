@@ -214,6 +214,101 @@ const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
                     </Grid>
                 </Paper>
                 
+                {/* Analysis Summary Card */}
+                <Paper 
+                    elevation={3} 
+                    sx={{ 
+                        p: 4, 
+                        mb: 4, 
+                        borderRadius: 2,
+                        background: 'linear-gradient(145deg, #1a2035, #2a3045)',
+                        color: 'white',
+                        boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    <Typography variant="h4" gutterBottom sx={{ fontWeight: 'medium', color: 'white' }}>
+                        <Insights sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        Summary Analysis
+                    </Typography>
+                    
+                    <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.1)' }} />
+                    
+                    <Typography variant="body1" sx={{ 
+                        lineHeight: 1.8, 
+                        fontSize: '1.1rem', 
+                        p: 2, 
+                        bgcolor: 'rgba(255,255,255,0.05)',
+                        borderRadius: 2,
+                        borderLeft: '4px solid #0A66C2',
+                        fontStyle: 'italic'
+                    }}>
+                        {analysis.summary || 'Your personalized analysis will help you identify strengths and areas for improvement.'}
+                    </Typography>
+                    
+                    <Grid container spacing={3} mt={3}>
+                        <Grid item xs={12} md={6}>
+                            <Card sx={{ bgcolor: 'rgba(255,255,255,0.05)', height: '100%' }}>
+                                <CardContent>
+                                    <Typography variant="h6" sx={{ 
+                                        mb: 2, 
+                                        display: 'flex', 
+                                        alignItems: 'center',
+                                        color: performanceInfo.color
+                                    }}>
+                                        <EmojiEvents sx={{ mr: 1 }} />
+                                        Performance Level: {performanceLevel}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+                                        {analysis.performance_description || 'Keep practicing to improve your skills and knowledge.'}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Card sx={{ bgcolor: 'rgba(255,255,255,0.05)', height: '100%' }}>
+                                <CardContent>
+                                    <Typography variant="h6" sx={{ 
+                                        mb: 2, 
+                                        display: 'flex', 
+                                        alignItems: 'center',
+                                        color: '#4caf50'
+                                    }}>
+                                        <Lightbulb sx={{ mr: 1 }} />
+                                        Key Insights
+                                    </Typography>
+                                    {Array.isArray(insights) && insights.length > 0 ? (
+                                        <List dense disablePadding>
+                                            {insights.slice(0, 2).map((insight, index) => (
+                                                <ListItem key={index} disableGutters sx={{ mb: 1 }}>
+                                                    <ListItemIcon sx={{ minWidth: 36 }}>
+                                                        <Info sx={{ color: '#0A66C2' }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText 
+                                                        primary={
+                                                            typeof insight === 'object' 
+                                                            ? insight.insight 
+                                                            : insight
+                                                        }
+                                                        secondary={
+                                                            typeof insight === 'object' && insight.action
+                                                            ? `Action: ${insight.action}`
+                                                            : null
+                                                        }
+                                                    />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    ) : (
+                                        <Typography variant="body2">
+                                            Continue practicing to gain more insights into your learning patterns.
+                                        </Typography>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+                </Paper>
+                
                 {/* Proficiency Breakdown */}
                 <Paper 
                     elevation={3} 
@@ -347,37 +442,41 @@ const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
                             
                             <List>
                                 {strengths.map((strength, index) => (
-                                    <ListItem 
-                                        key={index} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(76, 175, 80, 0.1)', 
-                                            mb: 2, 
-                                            borderRadius: 2,
-                                            border: '1px solid rgba(76, 175, 80, 0.3)'
-                                        }}
-                                    >
+                                    <ListItem key={index} sx={{ 
+                                        bgcolor: 'rgba(255,255,255,0.05)',
+                                        mb: 2,
+                                        borderRadius: 2,
+                                        py: 2
+                                    }}>
                                         <ListItemIcon>
-                                            <Avatar sx={{ bgcolor: '#4caf50' }}>
-                                                <Check />
-                                            </Avatar>
+                                            <CheckCircle sx={{ color: '#4caf50', fontSize: 30 }} />
                                         </ListItemIcon>
                                         <ListItemText 
                                             primary={
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <Typography variant="subtitle1" fontWeight="medium">
-                                                        {strength.topic}
-                                                    </Typography>
-                                                    <Chip 
-                                                        label={strength.proficiency} 
-                                                        size="small"
-                                                        sx={{ bgcolor: '#4caf50', color: 'white' }}
-                                                    />
-                                                </Box>
+                                                <Typography variant="body1" fontWeight="medium" color="white">
+                                                    {strength.topic} - {strength.proficiency}
+                                                </Typography>
                                             }
                                             secondary={
-                                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5 }}>
-                                                    {strength.details}
-                                                </Typography>
+                                                <>
+                                                    <Typography variant="body2" color="rgba(255,255,255,0.7)" paragraph>
+                                                        {strength.details}
+                                                    </Typography>
+                                                    {strength.description && (
+                                                        <Typography 
+                                                            variant="body2" 
+                                                            color="rgba(255,255,255,0.9)"
+                                                            sx={{ 
+                                                                mt: 1, 
+                                                                p: 1, 
+                                                                bgcolor: 'rgba(76,175,80,0.1)', 
+                                                                borderRadius: 1 
+                                                            }}
+                                                        >
+                                                            {strength.description}
+                                                        </Typography>
+                                                    )}
+                                                </>
                                             }
                                         />
                                     </ListItem>
@@ -413,37 +512,41 @@ const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
                             
                             <List>
                                 {weaknesses.map((weakness, index) => (
-                                    <ListItem 
-                                        key={index} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(244, 67, 54, 0.1)', 
-                                            mb: 2, 
-                                            borderRadius: 2,
-                                            border: '1px solid rgba(244, 67, 54, 0.3)'
-                                        }}
-                                    >
+                                    <ListItem key={index} sx={{ 
+                                        bgcolor: 'rgba(255,255,255,0.05)',
+                                        mb: 2,
+                                        borderRadius: 2,
+                                        py: 2
+                                    }}>
                                         <ListItemIcon>
-                                            <Avatar sx={{ bgcolor: '#f44336' }}>
-                                                <TrendingUp />
-                                            </Avatar>
+                                            <Error sx={{ color: '#f44336', fontSize: 30 }} />
                                         </ListItemIcon>
                                         <ListItemText 
                                             primary={
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <Typography variant="subtitle1" fontWeight="medium">
-                                                        {weakness.topic}
-                                                    </Typography>
-                                                    <Chip 
-                                                        label={weakness.proficiency} 
-                                                        size="small"
-                                                        sx={{ bgcolor: '#f44336', color: 'white' }}
-                                                    />
-                                                </Box>
+                                                <Typography variant="body1" fontWeight="medium" color="white">
+                                                    {weakness.topic} - {weakness.proficiency}
+                                                </Typography>
                                             }
                                             secondary={
-                                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5 }}>
-                                                    {weakness.details}
-                                                </Typography>
+                                                <>
+                                                    <Typography variant="body2" color="rgba(255,255,255,0.7)" paragraph>
+                                                        {weakness.details}
+                                                    </Typography>
+                                                    {weakness.description && (
+                                                        <Typography 
+                                                            variant="body2" 
+                                                            color="rgba(255,255,255,0.9)"
+                                                            sx={{ 
+                                                                mt: 1, 
+                                                                p: 1, 
+                                                                bgcolor: 'rgba(244,67,54,0.1)', 
+                                                                borderRadius: 1 
+                                                            }}
+                                                        >
+                                                            {weakness.description}
+                                                        </Typography>
+                                                    )}
+                                                </>
                                             }
                                         />
                                     </ListItem>
@@ -465,7 +568,7 @@ const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
                     </Grid>
                 </Grid>
                 
-                {/* Recommendations & Insights */}
+                {/* Recommendations */}
                 <Paper 
                     elevation={3} 
                     sx={{ 
@@ -484,65 +587,103 @@ const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
                         alignItems: 'center'
                     }}>
                         <Recommend sx={{ mr: 1 }} />
-                        Recommendations & Insights
+                        Personalized Recommendations
                     </Typography>
                     
                     <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.1)' }} />
                     
-                    <Grid container spacing={4}>
-                        {/* Recommendations */}
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h6" gutterBottom sx={{ color: '#8bc34a' }}>
-                                Recommended Next Steps
-                            </Typography>
+                    <Grid container spacing={3}>
+                        {recommendations.map((recommendation, index) => {
+                            // Check if recommendation is a string (old format) or object (new format)
+                            const isObject = typeof recommendation === 'object';
+                            const topic = isObject ? recommendation.topic : 'General';
+                            const action = isObject ? recommendation.action : recommendation;
+                            const priority = isObject ? recommendation.priority : 'Medium';
+                            const resources = isObject ? recommendation.resources : [];
                             
-                            <List>
-                                {recommendations.map((recommendation, index) => (
-                                    <ListItem 
-                                        key={index} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.05)', 
-                                            mb: 2, 
-                                            borderRadius: 2 
-                                        }}
-                                    >
-                                        <ListItemIcon>
-                                            <Avatar sx={{ bgcolor: '#8bc34a' }}>
-                                                {index + 1}
-                                            </Avatar>
-                                        </ListItemIcon>
-                                        <ListItemText primary={recommendation} />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Grid>
-                        
-                        {/* Insights */}
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h6" gutterBottom sx={{ color: '#2196f3' }}>
-                                Performance Insights
-                            </Typography>
+                            // Determine priority color
+                            let priorityColor = '#ffeb3b'; // Medium - yellow
+                            if (priority === 'High') priorityColor = '#f44336'; // High - red
+                            if (priority === 'Low') priorityColor = '#4caf50'; // Low - green
                             
-                            <List>
-                                {insights.map((insight, index) => (
-                                    <ListItem 
-                                        key={index} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.05)', 
-                                            mb: 2, 
-                                            borderRadius: 2 
-                                        }}
-                                    >
-                                        <ListItemIcon>
-                                            <Avatar sx={{ bgcolor: '#2196f3' }}>
-                                                <Info />
-                                            </Avatar>
-                                        </ListItemIcon>
-                                        <ListItemText primary={insight} />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Grid>
+                            return (
+                                <Grid item xs={12} md={6} key={index}>
+                                    <Card sx={{ 
+                                        bgcolor: 'rgba(255,255,255,0.05)', 
+                                        height: '100%',
+                                        borderLeft: `4px solid ${priorityColor}`,
+                                        transition: 'transform 0.2s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-4px)',
+                                            boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+                                        }
+                                    }}>
+                                        <CardContent>
+                                            {/* Priority Tag */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                                <Typography variant="subtitle1" fontWeight="bold" color="white">
+                                                    {topic}
+                                                </Typography>
+                                                <Chip 
+                                                    label={`${priority} Priority`} 
+                                                    size="small"
+                                                    sx={{ 
+                                                        bgcolor: priorityColor, 
+                                                        color: priority === 'Medium' ? 'black' : 'white',
+                                                        fontWeight: 'medium',
+                                                        fontSize: '0.75rem'
+                                                    }} 
+                                                />
+                                            </Box>
+                                            
+                                            {/* Recommendation */}
+                                            <Typography variant="body1" sx={{ 
+                                                mb: 2,
+                                                fontSize: '1rem',
+                                                fontWeight: 'medium',
+                                                color: 'white'
+                                            }}>
+                                                {action}
+                                            </Typography>
+                                            
+                                            {/* Resources */}
+                                            {resources && resources.length > 0 && (
+                                                <>
+                                                    <Typography variant="subtitle2" color="rgba(255,255,255,0.7)" gutterBottom sx={{ mt: 2 }}>
+                                                        Suggested Resources:
+                                                    </Typography>
+                                                    <List dense disablePadding>
+                                                        {resources.map((resource, i) => (
+                                                            <ListItem key={i} disableGutters sx={{ 
+                                                                py: 0.5,
+                                                                display: 'flex',
+                                                                alignItems: 'flex-start'
+                                                            }}>
+                                                                <ListItemIcon sx={{ minWidth: 28, mt: '2px' }}>
+                                                                    <ArrowForward sx={{ 
+                                                                        fontSize: '0.8rem',
+                                                                        color: 'rgba(255,255,255,0.6)'
+                                                                    }} />
+                                                                </ListItemIcon>
+                                                                <ListItemText 
+                                                                    primary={resource}
+                                                                    primaryTypographyProps={{
+                                                                        variant: 'body2',
+                                                                        color: 'rgba(255,255,255,0.8)',
+                                                                        fontSize: '0.9rem'
+                                                                    }}
+                                                                />
+                                                            </ListItem>
+                                                        ))}
+                                                    </List>
+                                                </>
+                                            )}
+                                            
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            );
+                        })}
                     </Grid>
                 </Paper>
                 

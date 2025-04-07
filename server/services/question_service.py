@@ -51,29 +51,65 @@ class QuestionService:
             
             # Convert to list of dictionaries
             questions = []
+            question_count = 0
             for doc in cursor:
-                # Convert MongoDB _id to string
-                if '_id' in doc:
-                    doc['_id'] = str(doc['_id'])
-                    
-                # Convert question_id back to id for client
-                if 'question_id' in doc:
-                    doc['id'] = doc.pop('question_id')
-                elif '_id' in doc and 'id' not in doc:
-                    doc['id'] = doc['_id']
-                    
-                # Ensure correct field names for client
-                if 'correct_answer' in doc and 'correctAnswer' not in doc:
-                    doc['correctAnswer'] = doc['correct_answer']
-                    
-                questions.append(doc)
-                
+                question_count += 1
+                try:
+                    sanitized_doc = self._sanitize_document(doc)
+                    questions.append(sanitized_doc)
+                    # Test JSON serialization
+                    json.dumps(sanitized_doc)
+                except Exception as serialization_error:
+                    print(f"Error sanitizing question {doc.get('_id', 'unknown')}: {serialization_error}")
+                    # Skip this document if it cannot be serialized
+            
+            print(f"Processed {question_count} questions, returning {len(questions)} valid questions")
             return questions
             
         except Exception as e:
             print(f"Error getting questions: {e}")
             traceback.print_exc()
             return []
+    
+    def _sanitize_document(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert MongoDB document to JSON-serializable dict"""
+        # Make a copy to avoid modifying the original
+        result = {}
+        
+        # Process each field
+        for key, value in doc.items():
+            # Convert ObjectId to string
+            if isinstance(value, ObjectId):
+                result[key] = str(value)
+            # Handle nested dictionaries
+            elif isinstance(value, dict):
+                result[key] = self._sanitize_document(value)
+            # Handle lists (which might contain dictionaries or ObjectIds)
+            elif isinstance(value, list):
+                result[key] = [
+                    self._sanitize_document(item) if isinstance(item, dict) 
+                    else str(item) if isinstance(item, ObjectId)
+                    else item
+                    for item in value
+                ]
+            else:
+                result[key] = value
+        
+        # Convert MongoDB _id to string
+        if '_id' in result:
+            result['_id'] = str(result['_id'])
+            
+        # Convert question_id back to id for client
+        if 'question_id' in result:
+            result['id'] = result.pop('question_id')
+        elif '_id' in result and 'id' not in result:
+            result['id'] = result['_id']
+            
+        # Ensure correct field names for client
+        if 'correct_answer' in result and 'correctAnswer' not in result:
+            result['correctAnswer'] = result['correct_answer']
+            
+        return result
             
     def get_question_by_id(self, question_id: str) -> Optional[Dict[str, Any]]:
         """Get a question by ID"""
@@ -94,21 +130,7 @@ class QuestionService:
             if not doc:
                 return None
                 
-            # Convert MongoDB _id to string
-            if '_id' in doc:
-                doc['_id'] = str(doc['_id'])
-                
-            # Convert question_id back to id for client
-            if 'question_id' in doc:
-                doc['id'] = doc.pop('question_id')
-            elif '_id' in doc and 'id' not in doc:
-                doc['id'] = doc['_id']
-                
-            # Ensure correct field names for client
-            if 'correct_answer' in doc and 'correctAnswer' not in doc:
-                doc['correctAnswer'] = doc['correct_answer']
-                
-            return doc
+            return self._sanitize_document(doc)
             
         except Exception as e:
             print(f"Error getting question by ID: {e}")

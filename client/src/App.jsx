@@ -14,6 +14,7 @@ import Signup from './components/Auth/Signup';
 import DemoFeatures from './components/Demo/DemoFeatures';
 import TestConnection from './components/Test/TestConnection';
 import QuestionGenerator from './components/Admin/QuestionGenerator';
+import AdminDashboard from './components/Admin/AdminDashboard';
 
 function App() {
   return (
@@ -23,14 +24,20 @@ function App() {
         <Router>
           <Layout>
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/quiz" element={<AdaptiveQuiz />} />
-              <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/signup" element={<Signup />} />
               <Route path="/demo" element={<DemoFeatures />} />
               <Route path="/test-connection" element={<TestConnection />} />
+              
+              {/* Auth Routes */}
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/question-generator" element={<QuestionGenerator />} />
             </Routes>
           </Layout>

@@ -184,16 +184,6 @@ const Home = () => {
               </Grid>
             ))}
           </Grid>
-
-          <Button
-            variant="outlined"
-            color="primary"
-            component={Link}
-            to="/admin/question-generator"
-            sx={{ mt: 2, mr: 2 }}
-          >
-            AI Question Generator
-          </Button>
         </motion.div>
       </Box>
 
@@ -225,6 +215,107 @@ const Home = () => {
           "Our intelligent system analyzes your responses in real-time,
           creating a personalized learning path that evolves with your understanding."
         </Typography>
+      </Box>
+
+      {/* Replace with new footer section */}
+      <Box 
+        component={motion.div}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+        sx={{ 
+          mt: 8,
+          mb: 6,
+          py: 5,
+          borderRadius: 4,
+          background: 'linear-gradient(135deg, rgba(10, 102, 194, 0.08) 0%, rgba(10, 102, 194, 0.03) 100%)',
+          maxWidth: '100%',
+          mx: 'auto',
+        }}
+      >
+        <Container>
+          <Grid container spacing={4} alignItems="center">
+            {/* Stats section */}
+            <Grid item xs={12} md={7}>
+              <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
+                Join thousands of learners improving their Python skills
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h3" color="primary" fontWeight="bold">
+                      10k+
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Questions Answered
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h3" color="primary" fontWeight="bold">
+                      89%
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Learning Efficiency
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h3" color="primary" fontWeight="bold">
+                      12
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Python Topics
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Grid>
+            
+            {/* Call to action */}
+            <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'center', md: 'right' } }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/quiz')}
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  fontSize: '1.1rem',
+                  borderRadius: 2,
+                  background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                  boxShadow: '0 4px 20px rgba(10, 102, 194, 0.25)',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #085294, #0A66C2)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 25px rgba(10, 102, 194, 0.3)',
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Take the Quiz Challenge
+              </Button>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                No registration required. Start learning instantly.
+              </Typography>
+            </Grid>
+          </Grid>
+          
+          {/* Bottom links & credits */}
+          <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <Typography variant="caption" color="text.secondary">
+              © {new Date().getFullYear()} AdaptiveTestAI - Created by AI Adventures
+            </Typography>
+            <Box>
+              <Button component={Link} to="/about" size="small" sx={{ color: 'text.secondary' }}>About</Button>
+              <Button component={Link} to="/contact" size="small" sx={{ color: 'text.secondary' }}>Contact</Button>
+            </Box>
+          </Box>
+        </Container>
       </Box>
     </Container>
   );

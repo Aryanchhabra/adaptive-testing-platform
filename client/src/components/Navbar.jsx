@@ -1,14 +1,15 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
 import { LoginButton } from './Auth/LoginButton';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useTheme } from '@mui/material/styles';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 function Navbar() {
-  const { user } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const theme = useTheme();
+  const navigate = useNavigate();
   const [adminMenuAnchor, setAdminMenuAnchor] = React.useState(null);
 
   const handleAdminMenuOpen = (event) => {
@@ -17,6 +18,15 @@ function Navbar() {
 
   const handleAdminMenuClose = () => {
     setAdminMenuAnchor(null);
+  };
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const navItems = [
@@ -70,15 +80,23 @@ function Navbar() {
           {/* Admin Menu */}
           {user && user.isAdmin && (
             <>
-              <IconButton 
-                color="inherit" 
-                onClick={handleAdminMenuOpen}
-                aria-label="Admin menu"
-                aria-controls="admin-menu"
-                aria-haspopup="true"
-              >
-                <AdminPanelSettingsIcon />
-              </IconButton>
+              <Tooltip title="Admin Panel">
+                <IconButton 
+                  color="inherit" 
+                  onClick={handleAdminMenuOpen}
+                  aria-label="Admin menu"
+                  aria-controls="admin-menu"
+                  aria-haspopup="true"
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                    }
+                  }}
+                >
+                  <AdminPanelSettingsIcon />
+                </IconButton>
+              </Tooltip>
               <Menu
                 id="admin-menu"
                 anchorEl={adminMenuAnchor}
@@ -86,6 +104,13 @@ function Navbar() {
                 open={Boolean(adminMenuAnchor)}
                 onClose={handleAdminMenuClose}
               >
+                <MenuItem 
+                  component={Link} 
+                  to="/admin" 
+                  onClick={handleAdminMenuClose}
+                >
+                  Admin Dashboard
+                </MenuItem>
                 <MenuItem 
                   component={Link} 
                   to="/admin/question-generator" 
@@ -97,23 +122,48 @@ function Navbar() {
             </>
           )}
 
-          <LoginButton />
-          
-          {!user && (
-            <Button
-              variant="contained"
-              color="primary"
-              component={Link}
-              to="/signup"
-              sx={{
-                background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #084b8e, #0A66C2)',
-                }
-              }}
-            >
-              Sign Up
-            </Button>
+          {user ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {user.displayName || user.email}
+              </Typography>
+              <Button 
+                variant="outlined" 
+                color="inherit"
+                size="small"
+                onClick={handleLogout}
+                sx={{ borderColor: 'rgba(255,255,255,0.3)' }}
+              >
+                Logout
+              </Button>
+            </Box>
+          ) : (
+            <>
+              <Button
+                variant="outlined" 
+                color="inherit"
+                component={Link}
+                to="/admin-login"
+                sx={{ borderColor: 'rgba(255,255,255,0.3)' }}
+              >
+                Admin Login
+              </Button>
+              
+              <Button
+                variant="contained"
+                color="primary"
+                component={Link}
+                to="/signup"
+                sx={{
+                  background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #084b8e, #0A66C2)',
+                  }
+                }}
+              >
+                Sign Up
+              </Button>
+            </>
           )}
         </Box>
       </Toolbar>
