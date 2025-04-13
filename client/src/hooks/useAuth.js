@@ -38,6 +38,31 @@ export const useAuth = () => {
           }
         }
         
+        // Check if there's a Firebase user already logged in
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          console.log("Found existing Firebase user:", currentUser.displayName || currentUser.email);
+          
+          // Create a proper user object with Google profile data
+          const isAdmin = ADMIN_USERS.some(admin => admin.email === currentUser.email);
+          const userData = {
+            id: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email.split('@')[0],
+            photoURL: currentUser.photoURL,
+            isAdmin: isAdmin,
+            // Initialize empty data structures
+            knowledge_state: {},
+            quiz_history: []
+          };
+          
+          // Save the user data
+          localStorage.setItem('userData', JSON.stringify(userData));
+          setUser(userData);
+          setLoading(false);
+          return;
+        }
+        
         // Check if the user was an admin from a previous session
         const adminEmail = localStorage.getItem('adminEmail');
         if (adminEmail === 'admin@adaptivetest.ai') {
@@ -232,8 +257,14 @@ export const useAuth = () => {
 
   const loginWithGoogle = async () => {
     try {
+      // Clear any previous user data
+      localStorage.removeItem('userData');
+      localStorage.removeItem('authToken');
+      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      
+      console.log("Google login successful:", result.user.displayName || result.user.email);
       
       // Get ID token from Firebase
       const idToken = await result.user.getIdToken();
