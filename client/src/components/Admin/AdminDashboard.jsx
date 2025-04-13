@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Container,
@@ -15,7 +15,7 @@ import {
   ListItemText
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Dashboard as DashboardIcon,
   Code as CodeIcon,
@@ -24,6 +24,7 @@ import {
   Settings as SettingsIcon,
   Add as AddIcon
 } from '@mui/icons-material';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 // Styled components
 const FeatureCard = styled(Card)(({ theme }) => ({
@@ -38,6 +39,16 @@ const FeatureCard = styled(Card)(({ theme }) => ({
 }));
 
 const AdminDashboard = () => {
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
+
+  // Check for admin access
+  useEffect(() => {
+    if (!user || !user.isAdmin) {
+      navigate('/admin-login');
+    }
+  }, [user, navigate]);
+
   const adminFeatures = [
     {
       title: 'Question Generator',

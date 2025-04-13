@@ -7,14 +7,17 @@ import Layout from './components/Layout';
 import Home from './components/Home';
 import About from './components/About';
 import Contact from './components/Contact';
-import AdaptiveQuiz from './components/Quiz/AdaptiveQuiz';
+import AdaptiveQuiz from './components/quiz/AdaptiveQuiz';
 import { AuthProvider } from './contexts/AuthContext';
-import AdminLogin from './components/Auth/AdminLogin';
-import Signup from './components/Auth/Signup';
+import AdminLogin from './components/auth/AdminLogin';
+import Signup from './components/auth/Signup';
+import Profile from './components/auth/Profile';
 import DemoFeatures from './components/Demo/DemoFeatures';
 import TestConnection from './components/Test/TestConnection';
 import QuestionGenerator from './components/Admin/QuestionGenerator';
 import AdminDashboard from './components/Admin/AdminDashboard';
+import Login from './components/auth/Login';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -35,10 +38,12 @@ function App() {
               {/* Auth Routes */}
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
               
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/question-generator" element={<QuestionGenerator />} />
+              <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requireAdmin={true} />} />
+              <Route path="/admin/question-generator" element={<ProtectedRoute element={<QuestionGenerator />} requireAdmin={true} />} />
             </Routes>
           </Layout>
         </Router>

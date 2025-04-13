@@ -23,15 +23,19 @@ import {
   ListItemText,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Breadcrumbs,
+  Link as MuiLink
 } from '@mui/material';
 import {
   Add as AddIcon,
   ExpandMore as ExpandMoreIcon,
   Check as CheckIcon,
   Error as ErrorIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Dashboard as DashboardIcon
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 
 const TOPICS = [
   'Python Basics',
@@ -121,6 +125,25 @@ const QuestionGenerator = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+      {/* Admin Panel Navigation */}
+      <Box sx={{ mb: 4 }}>
+        <Breadcrumbs separator="›" aria-label="admin-navigation">
+          <MuiLink 
+            component={Link} 
+            to="/admin" 
+            underline="hover" 
+            sx={{ display: 'flex', alignItems: 'center' }}
+            color="inherit"
+          >
+            <DashboardIcon sx={{ mr: 0.5 }} fontSize="small" />
+            Admin Dashboard
+          </MuiLink>
+          <Typography color="text.primary" sx={{ fontWeight: 'medium' }}>
+            Question Generator
+          </Typography>
+        </Breadcrumbs>
+      </Box>
+
       <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
           AI Question Generator
