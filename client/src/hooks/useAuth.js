@@ -23,6 +23,21 @@ export const useAuth = () => {
     const checkTokenAndFirebase = async () => {
       try {
         setLoading(true);
+        
+        // Check if we have stored user data from previous login
+        const storedUserData = localStorage.getItem('userData');
+        if (storedUserData) {
+          try {
+            const userData = JSON.parse(storedUserData);
+            setUser(userData);
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error("Error parsing stored user data:", e);
+            localStorage.removeItem('userData');
+          }
+        }
+        
         // Check if the user was an admin from a previous session
         const adminEmail = localStorage.getItem('adminEmail');
         if (adminEmail === 'admin@adaptivetest.ai') {
@@ -250,16 +265,23 @@ export const useAuth = () => {
       // Check if Google user is an admin
       const isAdmin = ADMIN_USERS.some(admin => admin.email === result.user.email);
       
-      if (isAdmin) {
-        setUser({
-          ...result.user,
-          isAdmin: true
-        });
-      } else {
-        setUser(result.user);
-      }
+      // Store Google user data in a cleaner format
+      const userData = {
+        id: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName || result.user.email.split('@')[0],
+        photoURL: result.user.photoURL,
+        isAdmin: isAdmin,
+        // Store some local user data
+        knowledge_state: {},
+        quiz_history: []
+      };
       
-      return result.user;
+      // Save user info
+      localStorage.setItem('userData', JSON.stringify(userData));
+      setUser(userData);
+      
+      return userData;
     } catch (error) {
       console.error("Google login failed:", error);
       throw error;
@@ -270,6 +292,8 @@ export const useAuth = () => {
     try {
       // Clear backend token
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('adminEmail');
       setToken(null);
       
       // Also sign out from Firebase
