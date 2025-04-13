@@ -17,7 +17,6 @@ import TestConnection from './components/Test/TestConnection';
 import QuestionGenerator from './components/Admin/QuestionGenerator';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import Login from './components/auth/Login';
-import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -39,11 +38,11 @@ function App() {
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+              <Route path="/profile" element={<Profile />} />
               
               {/* Admin Routes */}
-              <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requireAdmin={true} />} />
-              <Route path="/admin/question-generator" element={<ProtectedRoute element={<QuestionGenerator />} requireAdmin={true} />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/question-generator" element={<QuestionGenerator />} />
             </Routes>
           </Layout>
         </Router>
