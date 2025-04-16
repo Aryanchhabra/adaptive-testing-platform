@@ -31,6 +31,8 @@ class CustomJSONResponse(JSONResponse):
 # Import routers
 from routes.test_routes import router as test_router
 from routes.question_routes import router as question_router
+from routes.auth_routes import router as auth_router
+from routes.quiz_routes import router as quiz_router
 
 # Load environment variables from root directory
 root_dir = Path(__file__).resolve().parent.parent
@@ -56,6 +58,8 @@ app.add_middleware(
 # Include routers
 app.include_router(test_router)
 app.include_router(question_router)
+app.include_router(auth_router)
+app.include_router(quiz_router)  # New quiz routes with user integration
 
 @app.get("/")
 async def root():

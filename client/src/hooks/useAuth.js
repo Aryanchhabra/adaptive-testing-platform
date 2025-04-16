@@ -43,13 +43,24 @@ export const useAuth = () => {
         if (currentUser) {
           console.log("Found existing Firebase user:", currentUser.displayName || currentUser.email);
           
+          // Extra verification to ensure we have profile data
+          const displayName = currentUser.displayName || '';
+          const email = currentUser.email || 'user@example.com'; // Fallback
+          const photoURL = currentUser.photoURL || '';
+          
+          console.log("Setting user data with:", {
+            displayName, 
+            email,
+            photoURL
+          });
+          
           // Create a proper user object with Google profile data
-          const isAdmin = ADMIN_USERS.some(admin => admin.email === currentUser.email);
+          const isAdmin = ADMIN_USERS.some(admin => admin.email === email);
           const userData = {
             id: currentUser.uid,
-            email: currentUser.email,
-            displayName: currentUser.displayName || currentUser.email.split('@')[0],
-            photoURL: currentUser.photoURL,
+            email: email,
+            displayName: displayName || email.split('@')[0],
+            photoURL: photoURL,
             isAdmin: isAdmin,
             // Initialize empty data structures
             knowledge_state: {},
@@ -262,6 +273,10 @@ export const useAuth = () => {
       localStorage.removeItem('authToken');
       
       const provider = new GoogleAuthProvider();
+      // Request additional scopes for better profile data
+      provider.addScope('profile');
+      provider.addScope('email');
+      
       const result = await signInWithPopup(auth, provider);
       
       console.log("Google login successful:", result.user.displayName || result.user.email);
@@ -296,12 +311,23 @@ export const useAuth = () => {
       // Check if Google user is an admin
       const isAdmin = ADMIN_USERS.some(admin => admin.email === result.user.email);
       
+      // Ensure we have user details from Google
+      const displayName = result.user.displayName || '';
+      const email = result.user.email || 'user@example.com'; // Fallback if somehow email is missing
+      const photoURL = result.user.photoURL || '';
+      
+      console.log("Setting user data with:", {
+        displayName, 
+        email,
+        photoURL
+      });
+      
       // Store Google user data in a cleaner format
       const userData = {
         id: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName || result.user.email.split('@')[0],
-        photoURL: result.user.photoURL,
+        email: email,
+        displayName: displayName || email.split('@')[0],
+        photoURL: photoURL,
         isAdmin: isAdmin,
         // Store some local user data
         knowledge_state: {},

@@ -1,127 +1,173 @@
-# AdaptiveTestAI
+# Adaptive Testing Platform
 
-An adaptive testing platform that uses AI to generate questions and personalize learning experiences.
+A sophisticated adaptive learning platform for Python programming that adjusts question difficulty based on user performance.
 
 ## Features
 
-- **Adaptive Testing**: Questions adapt to the user's knowledge level
-- **AI-Generated Questions**: Uses OpenAI API to generate Python programming questions
-- **Performance Analytics**: Tracks user performance and provides insights
-- **Topic-Based Learning**: Organizes questions by programming topics
-- **Difficulty Levels**: Supports beginner, intermediate, and advanced questions
+- **Adaptive Question Selection**: Questions automatically adapt to the user's skill level
+- **Knowledge State Tracking**: Visual representation of progress across different Python topics
+- **Admin Dashboard**: Generate questions, manage content, and analyze user performance
+- **Interactive UI**: Modern, responsive interface with immediate feedback
+- **Secure Authentication**: Admin-only access to management features
 
-## Tech Stack
+## Live Demo
 
-- **Frontend**: React, Material-UI
-- **Backend**: FastAPI, Flask
-- **Database**: MongoDB
-- **AI**: OpenAI API (GPT-3.5 Turbo)
+The project is deployed at: [https://adaptivetest-ai.web.app](https://adaptivetest-ai.web.app)
 
 ## Setup Instructions
 
+Follow these steps to run the project on your local machine:
+
 ### Prerequisites
 
-- Node.js and npm
-- Python 3.8+
-- MongoDB (local or Atlas)
-- OpenAI API key
+- Node.js (v14+)
+- Python (v3.8+)
+- MongoDB
+- Git
 
-### Environment Setup
+### Clone the Repository
 
-1. Clone the repository
-   ```
-   git clone https://github.com/yourusername/adaptive-testing-platform.git
-   cd adaptive-testing-platform
-   ```
-
-2. Create a `.env` file in the root directory with the following variables:
-   ```
-   MONGODB_URL=your_mongodb_connection_string
-   DATABASE_NAME=adaptive_quiz
-   OPENAI_API_KEY=your_openai_api_key
-   ```
-
-### Backend Setup
-
-1. Install Python dependencies
-   ```
-   pip install -r requirements.txt
-   ```
-
-2. Start the server
-   ```
-   python server/app.py
-   ```
+```bash
+git clone https://github.com/Aryanchhabra/adaptive-testing-platform.git
+cd adaptive-testing-platform
+```
 
 ### Frontend Setup
 
-1. Install Node.js dependencies
-   ```
-   cd client
-   npm install
-   ```
+```bash
+# Navigate to client directory
+cd client
 
-2. Start the React development server
-   ```
-   npm start
-   ```
+# Install dependencies
+npm install
 
-## Usage
+# Create a .env file with the following content
+echo "VITE_API_URL=http://localhost:5000" > .env
 
-### Student Interface
+# Start the development server
+npm run dev
+```
 
-1. Navigate to `http://localhost:3000`
-2. Start a new quiz
-3. Answer questions and receive immediate feedback
-4. View performance analysis at the end of the quiz
+The frontend will be available at `http://localhost:3000`
 
-### Admin Interface
+### Backend Setup
 
-1. Navigate to `http://localhost:3000/admin/question-generator`
-2. Select a topic, difficulty level, and number of questions
-3. Generate AI-powered questions
-4. View and manage the question bank
+```bash
+# Navigate to server directory from the project root
+cd server
 
-## AI Question Generation
+# Create and activate a virtual environment
+python -m venv venv
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
 
-The platform uses OpenAI's GPT-3.5 Turbo model to generate high-quality programming questions. The implementation includes:
+# Install dependencies
+pip install -r requirements.txt
 
-- Rate limiting to manage API usage
-- Question validation to ensure quality
-- Topic and difficulty customization
-- Batch generation capability
+# Set up environment variables (create a .env file)
+echo "MONGODB_URI=mongodb://localhost:27017/adaptive_quiz" > .env
+echo "PORT=5000" >> .env
+echo "OPENAI_API_KEY=your_openai_api_key" >> .env
+
+# Start the server
+python app.py
+```
+
+The backend API will be available at `http://localhost:5000`
+
+### MongoDB Setup
+
+If you don't have MongoDB running locally, you can use MongoDB Atlas:
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a cluster and get your connection string
+3. Replace the MONGODB_URI in your .env file with the Atlas connection string
+
+### Admin Access
+
+To access the admin features:
+
+1. Navigate to `/admin-login` in the application
+2. Use the following credentials:
+   - Email: `admin@adaptivetest.ai`
+   - Password: `AdaptiveTest-Admin2024!`
 
 ## Project Structure
 
 ```
 adaptive-testing-platform/
-├── client/                 # React frontend
-├── server/                 # Python backend
-│   ├── config/             # Configuration files
-│   ├── database/           # Database connection and operations
-│   ├── models/             # Data models
-│   ├── routes/             # API routes
-│   ├── services/           # Business logic
-│   └── app.py              # Main application entry point
-├── .env                    # Environment variables
-└── README.md               # Project documentation
+├── client/                    # React frontend
+│   ├── public/                # Static assets
+│   │   ├── components/        # UI components
+│   │   │   ├── Admin/         # Admin-specific components
+│   │   │   ├── Auth/          # Authentication components
+│   │   │   └── Quiz/          # Quiz-related components
+│   │   ├── contexts/          # React contexts
+│   │   ├── hooks/             # Custom hooks
+│   │   ├── firebase/          # Firebase configuration
+│   │   └── App.jsx            # Main application component
+│   └── vite.config.js         # Vite configuration
+├── server/                    # Python backend
+│   ├── data/                  # Data files
+│   ├── models/                # Data models
+│   ├── routes/                # API endpoints
+│   ├── services/              # Business logic
+│   ├── config/                # Configuration
+│   ├── scripts/               # Utility scripts
+│   └── app.py                 # Main server file
+└── README.md                  # Project documentation
 ```
+
+## API Endpoints
+
+- `POST /api/quiz/start`: Start a new quiz session
+- `POST /api/quiz/submit`: Submit an answer and get the next question
+- `GET /api/questions`: Get all questions
+- `POST /api/admin/generate-questions`: Generate new questions (admin only)
+
+## Technologies Used
+
+### Frontend
+- React.js
+- Material UI
+- Framer Motion
+- Firebase Authentication
+- Vite
+
+### Backend
+- FastAPI
+- MongoDB
+- OpenAI API (for question generation)
+- PyMongo
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add some amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
+
+## Troubleshooting
+
+### Common Issues
+
+1. **API Connection Error**
+   - Ensure the backend server is running
+   - Check that the API URL in the frontend's .env file matches the backend URL
+   - Verify that CORS is enabled on the backend
+
+2. **MongoDB Connection Issues**
+   - Check your MongoDB connection string
+   - Ensure MongoDB is running if using a local instance
+   - Verify network access if using MongoDB Atlas
+
+3. **Question Generation Not Working**
+   - Verify your OpenAI API key is valid
+   - Check the server logs for any API-related errors
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- OpenAI for providing the API for question generation
-- MongoDB for the flexible document database
-- FastAPI and Flask for the backend framework
-- React and Material-UI for the frontend components

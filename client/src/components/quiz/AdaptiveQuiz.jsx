@@ -158,12 +158,22 @@ const AdaptiveQuiz = () => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
                 
-                const response = await fetch('/api/start-quiz', {
+                // Get token from localStorage if it exists
+                const token = localStorage.getItem('authToken');
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                
+                // Add authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                    console.log("Including authentication token in request");
+                }
+                
+                const response = await fetch('/api/quiz/start', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers,
                     signal: controller.signal
                 });
                 
@@ -280,12 +290,22 @@ const AdaptiveQuiz = () => {
         
         console.log("Request body:", requestBody);
 
+        // Get token from localStorage if it exists
+        const token = localStorage.getItem('authToken');
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        
+        // Add authorization header if token exists
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log("Including authentication token in submission");
+        }
+
         const response = await fetch('/api/quiz/submit', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers,
             body: JSON.stringify(requestBody)
         });
 

@@ -49,14 +49,7 @@ const FeatureList = styled(Box)(({ theme }) => ({
     position: 'relative',
     paddingLeft: theme.spacing(2),
     '&::before': {
-      content: '""',
-      position: 'absolute',
-      left: -theme.spacing(2),
-      top: '0.7em',
-      width: '6px',
-      height: '6px',
-      backgroundColor: theme.palette.primary.main,
-      borderRadius: '50%',
+      content: 'none',
     }
   }
 }));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../../styles/Auth.css';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,12 +11,30 @@ const Login = () => {
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuthContext();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
-    console.log('Login attempt:', { ...formData, isAdmin });
-    navigate(isAdmin ? '/admin/dashboard' : '/dashboard');
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Use the login function from AuthContext
+      const user = await login(formData.email, formData.password);
+      
+      if (isAdmin && user && user.isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to login. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +66,12 @@ const Login = () => {
           </button>
         </div>
 
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Email</label>
@@ -68,8 +93,8 @@ const Login = () => {
             />
           </div>
 
-          <button type="submit" className="auth-submit">
-            Login
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

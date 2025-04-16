@@ -3,7 +3,7 @@ import {
   Container, Paper, Typography, TextField, Button, Box, 
   Alert, CircularProgress, Snackbar
 } from '@mui/material';
-import { AdminPanelSettings } from '@mui/icons-material';
+import { AdminPanelSettings, LockOpen } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 
@@ -28,6 +28,13 @@ function AdminLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    // Only proceed if admin email is used
+    if (email !== 'admin@adaptivetest.ai') {
+      setError('Please use the admin email address');
+      setLoading(false);
+      return;
+    }
     
     try {
       const user = await login(email, password);
@@ -63,12 +70,12 @@ function AdminLogin() {
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <AdminPanelSettings sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+            <AdminPanelSettings sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
             <Typography variant="h4" gutterBottom>
-              Admin Login
+              Admin Dashboard Access
             </Typography>
             <Typography color="text.secondary">
-              Please sign in with your administrator credentials
+              Sign in with admin credentials to manage questions
             </Typography>
           </Box>
 
@@ -81,12 +88,13 @@ function AdminLogin() {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email"
+              label="Admin Email"
               variant="outlined"
               margin="normal"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              helperText="Use: admin@adaptivetest.ai"
             />
             <TextField
               fullWidth
@@ -103,26 +111,25 @@ function AdminLogin() {
               type="submit"
               variant="contained"
               size="large"
+              color="secondary"
               disabled={loading}
+              startIcon={<LockOpen />}
               sx={{
                 mt: 3,
-                background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #085294, #0A66C2)',
-                },
+                py: 1.5
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Access Admin Dashboard'}
             </Button>
             
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Button 
                 variant="text" 
-                color="primary" 
+                color="secondary" 
                 size="small"
                 onClick={fillDemoCredentials}
               >
-                Need demo credentials?
+                Fill Demo Credentials
               </Button>
             </Box>
           </form>
@@ -131,7 +138,7 @@ function AdminLogin() {
         {/* Help text for development */}
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            For development purposes, use:
+            For this demonstration, use:
             <br />
             Email: admin@adaptivetest.ai
             <br />
@@ -144,7 +151,7 @@ function AdminLogin() {
         open={showCredentials}
         autoHideDuration={6000}
         onClose={() => setShowCredentials(false)}
-        message="Demo credentials filled in. Click Sign In to continue."
+        message="Demo credentials filled in. Click to access the dashboard."
       />
     </Container>
   );

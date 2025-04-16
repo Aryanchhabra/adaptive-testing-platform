@@ -1,16 +1,18 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem, Tooltip, Avatar } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { LoginButton } from './Auth/LoginButton';
+import { LoginButton } from './auth/LoginButton';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useTheme } from '@mui/material/styles';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PersonIcon from '@mui/icons-material/Person';
 
 function Navbar() {
   const { user, logout } = useAuthContext();
   const theme = useTheme();
   const navigate = useNavigate();
   const [adminMenuAnchor, setAdminMenuAnchor] = React.useState(null);
+  const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
 
   const handleAdminMenuOpen = (event) => {
     setAdminMenuAnchor(event.currentTarget);
@@ -20,13 +22,27 @@ function Navbar() {
     setAdminMenuAnchor(null);
   };
   
+  const handleUserMenuOpen = (event) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+  
   const handleLogout = async () => {
     try {
       await logout();
       navigate('/');
+      handleUserMenuClose();
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+    handleUserMenuClose();
   };
 
   const navItems = [
@@ -36,30 +52,33 @@ function Navbar() {
   ];
 
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          flexGrow: 1,
-          gap: 2
-        }}>
+    <AppBar
+      position="static"
+      color="transparent"
+      elevation={0}
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper'
+      }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <img 
             src="/company-logo.png" 
             alt="Company Logo" 
-            style={{ height: '40px' }}
+            style={{ height: '40px', marginRight: '10px' }}
           />
-          <Typography 
-            variant="h5" 
-            component={Link} 
+          <Typography
+            variant="h6"
+            component={Link}
             to="/"
-            sx={{ 
+            sx={{
               textDecoration: 'none',
               color: 'inherit',
               fontWeight: 700,
               '& span': {
-                background: (theme) => 
-                  `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 color: 'transparent',
@@ -69,7 +88,7 @@ function Navbar() {
             <span>AdaptiveTestAI</span>
           </Typography>
         </Box>
-        
+
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {navItems.map((item, index) => (
             <Button key={index} color="inherit" component={Link} to={item.path}>
@@ -122,31 +141,58 @@ function Navbar() {
             </>
           )}
 
+          {/* User Menu */}
           {user ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                {user.displayName || user.email}
-              </Typography>
-              <Button 
-                variant="outlined" 
-                color="inherit"
-                size="small"
-                onClick={handleLogout}
-                sx={{ borderColor: 'rgba(255,255,255,0.3)' }}
+            <>
+              <Tooltip title="User Menu">
+                <IconButton
+                  onClick={handleUserMenuOpen}
+                  aria-label="User menu"
+                  aria-controls="user-menu"
+                  aria-haspopup="true"
+                  sx={{
+                    p: 0.5
+                  }}
+                >
+                  {user.photoURL ? (
+                    <Avatar 
+                      src={user.photoURL} 
+                      alt={user.displayName || user.email}
+                      sx={{ width: 40, height: 40 }}
+                    />
+                  ) : (
+                    <Avatar sx={{ width: 40, height: 40, bgcolor: theme.palette.primary.main }}>
+                      {(user.displayName || user.email || '?').charAt(0).toUpperCase()}
+                    </Avatar>
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Menu
+                id="user-menu"
+                anchorEl={userMenuAnchor}
+                keepMounted
+                open={Boolean(userMenuAnchor)}
+                onClose={handleUserMenuClose}
               >
-                Logout
-              </Button>
-            </Box>
+                <MenuItem onClick={handleProfileClick}>
+                  <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+                  My Profile
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
           ) : (
             <>
               <Button
                 variant="outlined" 
                 color="inherit"
                 component={Link}
-                to="/admin-login"
-                sx={{ borderColor: 'rgba(255,255,255,0.3)' }}
+                to="/login"
+                sx={{ borderColor: 'rgba(0,0,0,0.12)' }}
               >
-                Admin Login
+                Login
               </Button>
               
               <Button
@@ -155,13 +201,29 @@ function Navbar() {
                 component={Link}
                 to="/signup"
                 sx={{
-                  background: 'linear-gradient(45deg, #0A66C2, #0b7ad4)',
+                  background: 'linear-gradient(45deg, #3a86ff, #4361ee)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #084b8e, #0A66C2)',
+                    background: 'linear-gradient(45deg, #3a86ff, #4361ee)',
+                    opacity: 0.9,
                   }
                 }}
               >
                 Sign Up
+              </Button>
+              
+              <Button
+                variant="outlined"
+                color="secondary"
+                component={Link}
+                to="/admin-login"
+                startIcon={<AdminPanelSettingsIcon />}
+                sx={{ 
+                  ml: 1,
+                  borderColor: 'rgba(156, 39, 176, 0.5)',
+                  color: 'secondary.main' 
+                }}
+              >
+                Admin
               </Button>
             </>
           )}
