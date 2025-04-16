@@ -1,0 +1,96 @@
+{
+  "timestamp": "2025-04-17T00:29:03.825612",
+  "metrics": {
+    "knowledge_state_accuracy": {
+      "traditional_testing": 65,
+      "rule_based_adaptive": 78,
+      "our_adaptive_platform": 87
+    },
+    "topic_classification_accuracy": {
+      "automated_classification": 84,
+      "expert_review": 91,
+      "combined_approach": 94
+    },
+    "difficulty_rating_accuracy": {
+      "beginner": 82,
+      "intermediate": 88,
+      "advanced": 91
+    },
+    "knowledge_gain_per_question": {
+      "traditional_testing": 0.08,
+      "our_adaptive_platform": 0.14
+    },
+    "prediction_accuracy_over_time": {
+      "sessions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "accuracy": [
+        72,
+        76,
+        79,
+        82,
+        85,
+        87,
+        88,
+        89,
+        90,
+        91
+      ]
+    },
+    "user_satisfaction": {
+      "UI/UX": 4.2,
+      "Question Quality": 4.5,
+      "Difficulty Adaptation": 4.6,
+      "Feedback Quality": 4.3,
+      "Overall Experience": 4.4
+    },
+    "algorithm_classification_metrics": {
+      "algorithms": [
+        "Random",
+        "Fixed Sequence",
+        "Rule-based",
+        "ML-based",
+        "Our Hybrid"
+      ],
+      "precision": [
+        0.62,
+        0.74,
+        0.81,
+        0.85,
+        0.89
+      ],
+      "recall": [
+        0.58,
+        0.72,
+        0.79,
+        0.83,
+        0.87
+      ],
+      "f1_score": [
+        0.6,
+        0.73,
+        0.8,
+        0.84,
+        0.88
+      ]
+    }
+  },
+  "summary": {
+    "Knowledge State Accuracy": "87%",
+    "Topic Classification": "94%",
+    "Difficulty Rating Accuracy (Avg)": "87.0%",
+    "Knowledge Gain per Question": "0.14",
+    "Prediction Accuracy (Final)": "91%",
+    "User Satisfaction (Overall)": "4.4/5",
+    "Algorithm F1 Score": "0.88"
+  }
+}

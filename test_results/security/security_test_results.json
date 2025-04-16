@@ -1,0 +1,49 @@
+{
+  "auth_tests": [
+    {
+      "endpoint": "/api/auth/login",
+      "method": "post",
+      "status_code": 401,
+      "response_size": 38,
+      "is_secure": true
+    },
+    {
+      "endpoint": "/api/quiz/start",
+      "method": "post",
+      "status_code": 200,
+      "response_size": 1826,
+      "is_secure": false
+    }
+  ],
+  "injection_tests": [
+    {
+      "payload": "' OR '1'='1",
+      "field": "email",
+      "status_code": 401,
+      "response_size": 38,
+      "is_secure": true
+    },
+    {
+      "payload": "'; DROP TABLE users; --",
+      "field": "email",
+      "status_code": 401,
+      "response_size": 38,
+      "is_secure": true
+    },
+    {
+      "payload": "1 UNION SELECT * FROM users",
+      "field": "email",
+      "status_code": 401,
+      "response_size": 38,
+      "is_secure": true
+    },
+    {
+      "payload": "admin'--",
+      "field": "email",
+      "status_code": 401,
+      "response_size": 38,
+      "is_secure": true
+    }
+  ],
+  "rate_limiting": {}
+}
