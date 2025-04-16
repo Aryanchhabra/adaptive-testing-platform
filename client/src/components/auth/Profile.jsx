@@ -38,11 +38,6 @@ function Profile() {
       
       // Now fetch quiz history
       fetchQuizHistory();
-      
-      // Generate mock knowledge state if none exists
-      if (!user.knowledge_state || Object.keys(user.knowledge_state).length === 0) {
-        generateMockKnowledgeState();
-      }
     }
   }, [user]);
 
@@ -67,14 +62,23 @@ function Profile() {
       setLoadingHistory(true);
       setError(null);
       
-      // Check if we have quiz history in user data
-      if (user.quiz_history && user.quiz_history.length > 0) {
-        setQuizHistory(user.quiz_history);
-        setLoadingHistory(false);
-        return;
+      // Check if we have quiz history in localStorage
+      const storedData = localStorage.getItem('userData');
+      if (storedData) {
+        try {
+          const userData = JSON.parse(storedData);
+          if (userData && userData.quiz_history && userData.quiz_history.length > 0) {
+            console.log('Using real quiz history from localStorage:', userData.quiz_history);
+            setQuizHistory(userData.quiz_history);
+            setLoadingHistory(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing stored user data:', e);
+        }
       }
       
-      // Attempt to fetch quiz history from server
+      // Attempt to fetch quiz history from server as fallback
       try {
         const response = await fetch('/api/user/quiz-history', {
           headers: {
@@ -92,12 +96,12 @@ function Profile() {
             localStorage.setItem('userData', JSON.stringify(updatedUser));
           }
         } else {
-          console.warn('Failed to fetch quiz history from server');
-          generateMockQuizHistory();
+          console.warn('Failed to fetch quiz history from server, no history to display');
+          setQuizHistory([]); // Set empty array instead of generating mock data
         }
       } catch (error) {
         console.error('Error fetching quiz history:', error);
-        generateMockQuizHistory();
+        setQuizHistory([]); // Set empty array instead of generating mock data
       }
       
       setLoadingHistory(false);
@@ -106,80 +110,6 @@ function Profile() {
       setError('Failed to load quiz history');
       setLoadingHistory(false);
     }
-  };
-
-  const generateMockQuizHistory = () => {
-    // Generate more realistic quiz history with current date
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const twoMonthsAgo = new Date(today);
-    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-    
-    const history = [
-      { 
-        id: 'q1', 
-        date: today.toLocaleDateString(), 
-        score: Math.floor(75 + Math.random() * 25), // 75-100
-        questions: 10,
-        topics: ['Basic Python Syntax', 'Data Types', 'Variables']
-      },
-      { 
-        id: 'q2', 
-        date: yesterday.toLocaleDateString(), 
-        score: Math.floor(60 + Math.random() * 30), // 60-90
-        questions: 10,
-        topics: ['Control Flow', 'Functions', 'Error Handling']
-      },
-      {
-        id: 'q3',
-        date: twoMonthsAgo.toLocaleDateString(),
-        score: Math.floor(40 + Math.random() * 40), // 40-80
-        questions: 15,
-        topics: ['Object-Oriented Programming', 'Classes', 'Inheritance']
-      }
-    ];
-    
-    setQuizHistory(history);
-    
-    // Also update the user's stored data with this history
-    if (user) {
-      const updatedUser = { ...user, quiz_history: history };
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-    }
-  };
-
-  const generateMockKnowledgeState = () => {
-    if (!user) return;
-    
-    const topics = [
-      'Basic Python Syntax',
-      'Data Types',
-      'Variables',
-      'Control Flow',
-      'Functions',
-      'Object-Oriented Programming',
-      'Exception Handling',
-      'File Handling',
-      'Modules and Packages'
-    ];
-    
-    const mockState = {};
-    
-    // Generate a random level (0.1 to 0.95) for each topic
-    topics.forEach(topic => {
-      // Randomize levels for different topics
-      const level = Math.round((0.1 + Math.random() * 0.85) * 100) / 100;
-      mockState[topic] = { level };
-    });
-    
-    // Update user's knowledge state
-    const updatedUser = { ...user, knowledge_state: mockState };
-    localStorage.setItem('userData', JSON.stringify(updatedUser));
-    
-    // Update the user in context (this might not re-render immediately)
-    // We'll rely on the user knowledge_state check in the JSX
   };
 
   const handleLogout = async () => {
@@ -194,12 +124,6 @@ function Profile() {
   const refreshProfile = () => {
     setRefreshKey(prev => prev + 1);
     refreshUserFromStorage();
-    if (!user.knowledge_state || Object.keys(user.knowledge_state).length === 0) {
-      generateMockKnowledgeState();
-    }
-    if (!user.quiz_history || user.quiz_history.length === 0) {
-      generateMockQuizHistory();
-    }
   };
 
   // Calculate user stats for dashboard
@@ -498,10 +422,18 @@ function Profile() {
                   ))}
                 </List>
               ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    You haven't taken any quizzes yet.
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+                    You haven't taken any quizzes yet. Take your first quiz to track your progress!
                   </Typography>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    onClick={() => navigate('/quiz')}
+                    startIcon={<SchoolIcon />}
+                  >
+                    Start Your First Quiz
+                  </Button>
                 </Box>
               )}
             </Paper>

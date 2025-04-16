@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
     Box, Typography, Button, Paper, 
     Container, Grid, CircularProgress, 
@@ -21,6 +21,54 @@ import { PieChart, Pie, Cell, ResponsiveContainer, RadarChart, PolarGrid, PolarA
 
 const QuizComplete = ({ stats, analysis, knowledgeState, onRetakeQuiz }) => {
     const navigate = useNavigate();
+    
+    // Save quiz results to localStorage when component mounts
+    useEffect(() => {
+        if (stats && analysis) {
+            saveQuizResultsToUserData(stats, analysis, knowledgeState);
+        }
+    }, [stats, analysis, knowledgeState]);
+    
+    // Function to save quiz results to user data
+    const saveQuizResultsToUserData = (stats, analysis, knowledgeState) => {
+        try {
+            // Get current user data from localStorage
+            const userDataString = localStorage.getItem('userData');
+            if (!userDataString) {
+                console.warn('No user data found in localStorage');
+                return;
+            }
+            
+            const userData = JSON.parse(userDataString);
+            
+            // Create quiz history entry
+            const quizEntry = {
+                id: `quiz-${Date.now()}`,
+                date: new Date().toLocaleDateString(),
+                score: analysis.accuracy ? Math.round(analysis.accuracy * 100) : 0,
+                questions: analysis.total_questions || 0,
+                topics: Object.keys(analysis.proficiency_breakdown || {})
+            };
+            
+            // Initialize quiz_history array if it doesn't exist
+            if (!userData.quiz_history) {
+                userData.quiz_history = [];
+            }
+            
+            // Add new quiz to history
+            userData.quiz_history.unshift(quizEntry);
+            
+            // Update knowledge state with latest data
+            userData.knowledge_state = knowledgeState;
+            
+            // Save updated user data
+            localStorage.setItem('userData', JSON.stringify(userData));
+            
+            console.log('Quiz results saved to user profile:', quizEntry);
+        } catch (error) {
+            console.error('Error saving quiz results to user data:', error);
+        }
+    };
     
     if (!stats || !analysis) {
         return (
