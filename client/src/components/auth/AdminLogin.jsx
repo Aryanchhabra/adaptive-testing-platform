@@ -13,6 +13,7 @@ function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   
   const { login, user } = useAuthContext();
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function AdminLogin() {
   // Redirect if already logged in as admin
   useEffect(() => {
     if (user && user.isAdmin) {
+      console.log("User is already logged in as admin. Redirecting to /admin");
       navigate('/admin');
     }
   }, [user, navigate]);
@@ -37,11 +39,18 @@ function AdminLogin() {
     }
     
     try {
+      console.log("Attempting to log in with:", email);
       const user = await login(email, password);
+      console.log("Login response:", user);
       
       if (user && user.isAdmin) {
-        navigate('/admin');
+        console.log("Admin login successful, redirecting to /admin");
+        setLoginSuccess(true);
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1000);
       } else {
+        console.log("Login successful but user is not admin:", user);
         setError('You do not have admin privileges');
       }
     } catch (err) {
@@ -79,6 +88,12 @@ function AdminLogin() {
             </Typography>
           </Box>
 
+          {loginSuccess && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              Login successful! Redirecting to admin dashboard...
+            </Alert>
+          )}
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
@@ -105,6 +120,7 @@ function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              helperText="Use: AdaptiveTest-Admin2024!"
             />
             <Button
               fullWidth

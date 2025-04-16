@@ -25,6 +25,7 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 import AuthRedirect from '../auth/AuthRedirect';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 // Styled components
 const FeatureCard = styled(Card)(({ theme }) => ({
@@ -39,6 +40,9 @@ const FeatureCard = styled(Card)(({ theme }) => ({
 }));
 
 const AdminDashboard = () => {
+  // Get auth context to display user info
+  const { user, loading } = useAuthContext();
+  
   // Include the redirect component
   return (
     <>
@@ -132,13 +136,6 @@ const adminFeatures = [
     icon: <AddIcon color="primary" fontSize="large" />,
     path: '/admin/question-generator',
     color: '#0A66C2'
-  },
-  {
-    title: 'Quiz Management',
-    description: 'Manage quiz settings, topics, and question banks',
-    icon: <QuestionIcon color="secondary" fontSize="large" />,
-    path: '/admin/quiz-management',
-    color: '#9c27b0'
   },
   {
     title: 'User Analytics',

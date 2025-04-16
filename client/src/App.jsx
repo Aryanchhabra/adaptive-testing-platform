@@ -16,6 +16,9 @@ import DemoFeatures from './components/Demo/DemoFeatures';
 import TestConnection from './components/Test/TestConnection';
 import QuestionGenerator from './components/Admin/QuestionGenerator';
 import AdminDashboard from './components/Admin/AdminDashboard';
+import QuizManagement from './components/Admin/QuizManagement';
+import UserAnalytics from './components/Admin/UserAnalytics';
+import SystemSettings from './components/Admin/SystemSettings';
 import Login from './components/auth/Login';
 
 function App() {
@@ -43,6 +46,9 @@ function App() {
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/question-generator" element={<QuestionGenerator />} />
+              <Route path="/admin/quiz-management" element={<QuizManagement />} />
+              <Route path="/admin/user-analytics" element={<UserAnalytics />} />
+              <Route path="/admin/settings" element={<SystemSettings />} />
             </Routes>
           </Layout>
         </Router>
