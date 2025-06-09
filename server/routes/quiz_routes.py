@@ -96,8 +96,13 @@ async def quiz_start(request: Request):
                 knowledge_state[topic] = {
                     'level': 0.1,  # Start with 10% knowledge
                     'status': 'Beginner',
-                    'explanation': f'Starting to learn about {topic}'
+                    'explanation': f'Starting to learn about {topic}',
+                    'correct_count': 0,  # Initialize counts
+                    'incorrect_count': 0 # Initialize counts
                 }
+            elif topic and topic != 'null' and topic in knowledge_state and 'correct_count' not in knowledge_state[topic]:
+                knowledge_state[topic]['correct_count'] = 0
+                knowledge_state[topic]['incorrect_count'] = 0
         
         # Store quiz session in database (TODO: implement session storage)
         # If we had a session_service:
@@ -211,10 +216,15 @@ async def quiz_submit(submission: AnswerSubmission, request: Request):
         # Initialize topic in knowledge state if it doesn't exist
         if topic and topic != 'null' and topic not in knowledge_state:
             knowledge_state[topic] = {
-                'level': 0.1,
+                'level': 0.1, 
                 'status': 'Beginner',
-                'explanation': f'Starting to learn about {topic}'
+                'explanation': f'Starting to learn about {topic}',
+                'correct_count': 0,
+                'incorrect_count': 0
             }
+        elif topic and topic != 'null' and topic in knowledge_state and 'correct_count' not in knowledge_state[topic]:
+            knowledge_state[topic]['correct_count'] = 0
+            knowledge_state[topic]['incorrect_count'] = 0
             
         # Update knowledge state based on answer
         if is_correct:
@@ -230,7 +240,25 @@ async def quiz_submit(submission: AnswerSubmission, request: Request):
                 knowledge_state['level'] = knowledge_state.get('level', 1) + 1
                 knowledge_state['correct_streak'] = 0
                 print(f"Increased difficulty level to {knowledge_state['level']}")
-        else:
+                
+            # Update topic-specific knowledge for correct answer
+            if topic and topic != 'null' and topic in knowledge_state:
+                topic_data = knowledge_state[topic]
+                topic_data['correct_count'] = topic_data.get('correct_count', 0) + 1
+                topic_data['level'] = min(topic_data.get('level', 0.1) + 0.1, 1.0)
+                 # Update status based on level
+                if topic_data['level'] < 0.33:
+                    topic_data['status'] = 'Beginner'
+                    topic_data['explanation'] = f'You are starting to understand {topic}'
+                elif topic_data['level'] < 0.66:
+                    topic_data['status'] = 'Intermediate'
+                    topic_data['explanation'] = f'You have a good grasp of {topic}'
+                else:
+                    topic_data['status'] = 'Advanced'
+                    topic_data['explanation'] = f'You have mastered {topic}'
+                knowledge_state[topic] = topic_data
+
+        else: # Incorrect answer
             # Update streaks
             knowledge_state['incorrect_streak'] = knowledge_state.get('incorrect_streak', 0) + 1
             knowledge_state['correct_streak'] = 0
@@ -240,34 +268,23 @@ async def quiz_submit(submission: AnswerSubmission, request: Request):
                 knowledge_state['level'] = knowledge_state.get('level', 1) - 1
                 knowledge_state['incorrect_streak'] = 0
                 print(f"Decreased difficulty level to {knowledge_state['level']}")
-        
-        # Update topic-specific knowledge
-        if topic and topic != 'null' and topic in knowledge_state:
-            topic_data = knowledge_state[topic]
-            current_level = topic_data.get('level', 0.1)
-            
-            # Update level based on answer
-            if is_correct:
-                # Increase knowledge level (max 1.0)
-                new_level = min(current_level + 0.1, 1.0)
-            else:
-                # Decrease knowledge level (min 0.0)
-                new_level = max(current_level - 0.05, 0.0)
-                
-            topic_data['level'] = new_level
-            
-            # Update status based on level
-            if new_level < 0.33:
-                topic_data['status'] = 'Beginner'
-                topic_data['explanation'] = f'You are starting to understand {topic}'
-            elif new_level < 0.66:
-                topic_data['status'] = 'Intermediate'
-                topic_data['explanation'] = f'You have a good grasp of {topic}'
-            else:
-                topic_data['status'] = 'Advanced'
-                topic_data['explanation'] = f'You have mastered {topic}'
-                
-            knowledge_state[topic] = topic_data
+
+            # Update topic-specific knowledge for incorrect answer
+            if topic and topic != 'null' and topic in knowledge_state:
+                topic_data = knowledge_state[topic]
+                topic_data['incorrect_count'] = topic_data.get('incorrect_count', 0) + 1
+                topic_data['level'] = max(topic_data.get('level', 0.1) - 0.05, 0.0)
+                # Update status based on level (copied from correct block for consistency)
+                if topic_data['level'] < 0.33:
+                    topic_data['status'] = 'Beginner'
+                    topic_data['explanation'] = f'Still building fundamentals in {topic}'
+                elif topic_data['level'] < 0.66:
+                    topic_data['status'] = 'Intermediate'
+                    topic_data['explanation'] = f'Making progress in {topic}'
+                else:
+                    topic_data['status'] = 'Advanced'
+                    topic_data['explanation'] = f'Solid understanding of {topic}'
+                knowledge_state[topic] = topic_data
         
         # If user is authenticated, update their knowledge state
         if user:
@@ -284,15 +301,72 @@ async def quiz_submit(submission: AnswerSubmission, request: Request):
             correct_answers = total_score // 10  # Each correct answer is worth 10 points
             accuracy = correct_answers / total_questions if total_questions > 0 else 0
             
-            # Analysis generation - simplified for brevity
+            # Extract topics that were actually covered in this quiz session
+            attempted_topics = set()
+            for question_id in knowledge_state['answered_questions']:
+                # Find the question to get its topic
+                question_obj = next((q for q in all_questions if q.get('id') == question_id), None)
+                if question_obj and 'topic' in question_obj:
+                    topic = question_obj.get('topic')
+                    if topic and topic != 'null':
+                        attempted_topics.add(topic)
+            
+            # Get the proficiency breakdown only for attempted topics
+            proficiency_breakdown = {}
+            strengths = []
+            weaknesses = []
+            recommendations = []
+            
+            for topic in attempted_topics:
+                if topic in knowledge_state:
+                    # Calculate proficiency percentage
+                    level = knowledge_state[topic].get('level', 0) * 100
+                    proficiency_breakdown[topic] = f"{level:.1f}%"
+                    
+                    # Determine strengths and weaknesses based on final level
+                    if level >= 70:
+                        strengths.append(f"Strong understanding of {topic}")
+                    # Track weaknesses based on final level for reporting, but generate recommendations based on session performance
+                    elif level <= 40:
+                         weaknesses.append(f"Proficiency in {topic} is still developing (Level: {level:.0f}%). Consider reviewing fundamentals.")
+
+                    # Generate recommendations based on session performance for this topic
+                    correct_in_session = knowledge_state[topic].get('correct_count', 0)
+                    incorrect_in_session = knowledge_state[topic].get('incorrect_count', 0)
+                    
+                    if incorrect_in_session > 0 and incorrect_in_session >= correct_in_session:
+                        recommendations.append(f"Focus on practicing {topic}. You had {incorrect_in_session} incorrect answer(s) in this session.")
+                    elif incorrect_in_session > 0 and correct_in_session == 0: # Handle case where only incorrect answers were given for a topic
+                         recommendations.append(f"Review the basics of {topic}. You encountered difficulties with it in this session.")
+                 
+            
+            # If no specific recommendations were generated based on errors
+            if not recommendations and accuracy < 0.8: # Add a general tip if accuracy wasn't high but no specific topic stood out as problematic
+                 recommendations.append("Continue practicing consistently to solidify your understanding across topics.")
+            elif not recommendations and accuracy >= 0.8:
+                 recommendations.append("Great job! Keep challenging yourself with more complex problems.")
+
+            # Clean up: remove session counts from the knowledge state sent back (optional, depends if FE needs it)
+            final_knowledge_state = {}
+            for k, v in knowledge_state.items():
+                if isinstance(v, dict):
+                    final_knowledge_state[k] = {key: val for key, val in v.items() if key not in ['correct_count', 'incorrect_count']}
+                else:
+                    final_knowledge_state[k] = v
+
+            # Analysis generation with only attempted topics
             analysis = {
-                "strengths": ["Topic mastery analysis would go here"],
-                "weaknesses": ["Areas for improvement would go here"],
-                "recommendations": ["Personalized recommendations would go here"],
+                "strengths": strengths,
+                "weaknesses": weaknesses, # Now includes proficiency level
+                "recommendations": recommendations, # Generated based on session performance
                 "accuracy": accuracy,
                 "total_questions": total_questions,
                 "correct_answers": correct_answers,
                 "score": total_score,
+                "proficiency_breakdown": proficiency_breakdown,
+                "overall_proficiency": f"{sum([float(p.replace('%', '')) for p in proficiency_breakdown.values()]) / len(proficiency_breakdown):.1f}%" if proficiency_breakdown else "0%",
+                "performance_level": "Advanced" if accuracy >= 0.8 else "Intermediate" if accuracy >= 0.6 else "Beginner",
+                "topics_covered": list(attempted_topics)
             }
             
             return {
@@ -302,8 +376,8 @@ async def quiz_submit(submission: AnswerSubmission, request: Request):
                     "explanation": question.get('explanation', '')
                 },
                 "completed": True,
-                "score": knowledge_state['score'],
-                "knowledge_state": knowledge_state,
+                "score": knowledge_state['score'], # Return original score
+                "knowledge_state": final_knowledge_state, # Return knowledge state without session counts
                 "progress": {
                     "score": total_score,
                     "questionsAnswered": total_questions,

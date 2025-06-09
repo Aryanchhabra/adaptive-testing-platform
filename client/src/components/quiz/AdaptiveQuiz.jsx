@@ -114,6 +114,7 @@ const AdaptiveQuiz = () => {
   const [nextKnowledgeState, setNextKnowledgeState] = useState({});
   const [startTime, setStartTime] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [apiResponseData, setApiResponseData] = useState(null);
 
   // Start quiz session
   useEffect(() => {
@@ -338,11 +339,13 @@ const AdaptiveQuiz = () => {
         console.log("Setting knowledge state:", data.knowledge_state);
         setKnowledgeState(data.knowledge_state || {});
 
+        // Instead of setting completion state here, store the raw data
         if (data.completed) {
-            console.log("Quiz completed, setting final stats:", data.progress);
-            setQuizCompleted(true);
-            setFinalStats(data.progress || {});
-            setAnalysis(data.analysis || {});
+            console.log("API indicates quiz completed. Storing response data.");
+            setApiResponseData(data);
+        } else {
+            // Ensure apiResponseData is cleared if the response doesn't indicate completion
+            setApiResponseData(null); 
         }
 
     } catch (err) {
@@ -352,6 +355,36 @@ const AdaptiveQuiz = () => {
         setIsSubmitting(false);
     }
   };
+
+  // New useEffect hook to handle state updates when quiz is completed
+  useEffect(() => {
+    if (apiResponseData && apiResponseData.completed) {
+        console.log("Processing completed quiz data from apiResponseData:", apiResponseData);
+        
+        // Ensure we have the required data before showing completion screen
+        if (!apiResponseData.progress || !apiResponseData.analysis) {
+            console.error("Missing required data for quiz completion in stored data:", { 
+                hasProgress: !!apiResponseData.progress, 
+                hasAnalysis: !!apiResponseData.analysis 
+            });
+            setError("Unable to display quiz results. Please try again.");
+            setQuizCompleted(false); // Ensure we don't show a blank screen
+            return;
+        }
+        
+        console.log("TRANSITIONING TO COMPLETED STATE - Before state update (from useEffect)");
+        setFinalStats(apiResponseData.progress || {});
+        setAnalysis(apiResponseData.analysis || {});
+        setQuizCompleted(true); // Set completed status last
+        console.log("TRANSITIONING TO COMPLETED STATE - After state update (from useEffect)");
+    } else {
+        // If apiResponseData is cleared or not complete, ensure completed state is false
+        if (quizCompleted) { 
+             console.log("Clearing completed state because apiResponseData is not complete.");
+             setQuizCompleted(false);
+        }
+    }
+  }, [apiResponseData]); // Dependency array includes the new state
 
   const renderKnowledgeState = () => {
     // Skip rendering if knowledgeState is empty or not properly formatted
@@ -614,6 +647,17 @@ const AdaptiveQuiz = () => {
     setKnowledgeState({});
     startQuiz();
   };
+
+  // Add debug logging to understand render flow
+  console.log("Quiz render state:", {
+    quizStarted,
+    loading,
+    error,
+    quizCompleted,
+    hasFinalStats: !!finalStats,
+    hasAnalysis: !!analysis,
+    questionNumber
+  });
 
   if (!quizStarted) {
     return <QuizIntro onStartQuiz={handleStartQuiz} />;
